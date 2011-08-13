@@ -142,6 +142,11 @@ help = ->
   for name, command of commands
     console.log "beans #{name}\t#{command[1]}"
 
+# Build everything and run `npm publish`.
+publish = ->
+  build()
+  tryExec 'npm publish'
+
 # Get version information.
 ver = JSON.parse(fs.readFileSync(__dirname + '/../package.json')).version
 
@@ -161,6 +166,7 @@ commands =
   clean:   [ clean   , 'Remove generated directories and tidy things up.' ]
   docs:    [ docs    , 'Generate documentation files using Docco.' ]
   help:    [ help    , 'Display help (this text).' ]
+  publish: [ publish , 'Build everything and run npm publish.' ]
   version: [ version , 'Display current Beans version.' ]
   watch:   [ watch   , 'Build everything once, then watch for changes.' ]
 
