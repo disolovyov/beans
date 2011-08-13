@@ -1,0 +1,5 @@
+.git*
+beans.json
+build/
+docs/
+src/

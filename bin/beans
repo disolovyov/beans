@@ -1,0 +1,10 @@
+#!/usr/bin/env node
+
+try {
+  require('../lib/beans').run();
+}
+catch (e) {
+  // First time compilation case.
+  require('coffee-script');
+  require('../src/beans').run();
+}

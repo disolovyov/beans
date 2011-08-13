@@ -1,0 +1,20 @@
+{
+  "author": "Dimitry Solovyov <dimituri@gmail.com> (http://100-hour.com)",
+  "name": "beans",
+  "description": "Build tasks for CoffeeScript projects targeting Node and the browser.",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dimituri/beans.git"
+  },
+  "main": "lib/beans",
+  "engines": {
+    "node": "~0.4.10"
+  },
+  "dependencies": {
+    "glob": "~2.0.7",
+    "stitch": "~0.3.2",
+    "uglify-js": "~1.0.6"
+  },
+  "devDependencies": {}
+}
