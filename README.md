@@ -29,7 +29,7 @@ the following build defaults:
     {
       "browser": true,
       "browserPrefix": "",
-      "copyright": <current year>,
+      "copyrightFrom": <current year>,
       "license": <unspecified>
     }
 
@@ -41,7 +41,8 @@ pair is optional. In detail:
   created using [Stitch](https://github.com/sstephenson/stitch) and minified
   with [UglifyJS](http://marijnhaverbeke.nl/uglifyjs).
 * `browserPrefix` is used as a prefix for browser bundle filenames.
-* `copyright` is a copyright year string (e.g. 2010-2011) that defaults to the
-  current year. It is used in the browser bundle header comment.
+* `copyrightFrom` is a starting copyright year (e.g. 2010) that defaults to the
+  current year. The browser bundle header comment will have a copyright notice
+  featuring a span from the configured to year to current one (e.g. 2010-2011).
 * `license` is the license you're using for the project. If a license is
   specified, it is displayes in the browser bundle header comment.

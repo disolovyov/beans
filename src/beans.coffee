@@ -9,7 +9,7 @@ uglify = require 'uglify-js'
 defaults =
   browser: true
   browserPrefix: ''
-  copyright: (new Date).getFullYear()
+  copyrightFrom: (new Date).getFullYear()
   license: ''
 
 # Load package information from multiple sources.
@@ -21,27 +21,39 @@ loadInfo = ->
     info = {}
   for key of defaults
     info[key] = defaults[key] unless info[key]?
+
   # Load package.json and override existing significant values.
   package = JSON.parse(fs.readFileSync 'package.json')
   for key in ['author', 'name', 'description', 'version']
     unless package[key]?
       throw new Error "Section `#{key}' required in package.json."
     info[key] = package[key]
-  # Source header for browser bundles.
   info.browserName = info.browserPrefix + info.name
+
+  # Copyright year message.
+  currentYear = (new Date).getFullYear()
+  if currentYear > info.copyrightFrom
+    copyright = info.copyrightFrom + '-' + currentYear
+  else
+    copyright = currentYear
+
+  # License message.
   if info.license != ''
     license = "Released under the #{info.license}"
   else
     license = 'Contact author for licensing information'
+
+  # Source header for browser bundles.
   info.header = """
   /**
    * #{info.browserName} #{info.version} (browser bundle)
    * #{info.description}
    *
-   * Copyright (c) #{info.copyright} #{info.author}
+   * Copyright (c) #{copyright} #{info.author}
    * #{license}
    */
   """
+
   # Source footer for browser bundles.
   info.footer = "this.#{info.browserName} = require('#{info.browserName}');"
   info
