@@ -10,7 +10,7 @@ CoffeeScript projects.
 
 Beans is installed with npm:
 
-    $ npm install beans
+    $ npm install beans -g
 
 This should install a `beans` binary. A list of available commands can be
 obtained by typing `beans help`. In essence, Beans provides single and
