@@ -1,8 +1,10 @@
 fs     = require 'fs'
 glob   = require 'glob'
 path   = require 'path'
+rimraf = require 'rimraf'
 stitch = require 'stitch'
 uglify = require 'uglify-js'
+which  = require 'which'
 {exec} = require 'child_process'
 
 # Defaults for package information.
@@ -61,16 +63,23 @@ loadInfo = ->
 # Run the specified function if a given executable is installed,
 # or print a notice.
 ifInstalled = (executable, fn) ->
-  exec 'which ' + executable, (err) ->
+  which executable, (err) ->
     return fn() unless err
     console.log "This task needs `#{executable}' to be installed and in PATH."
 
 # Try to execute a shell command or fail with an error.
-tryExec = (cmd) ->
-  proc = exec cmd, (err) ->
+tryExec = (executable, args) ->
+  ifInstalled executable, ->
+    proc = exec executable + ' ' + args, (err) ->
+      throw err if err
+    proc.stdout.on 'data', (data) ->
+      process.stdout.write data.toString()
+
+# Try to remove a directory and its contents or fails with an error.
+rmrf = (path, fn) ->
+  rimraf path, (err) ->
     throw err if err
-  proc.stdout.on 'data', (data) ->
-    process.stdout.write data.toString()
+    fn?()
 
 # Safely make a directory with default permissions.
 makeDir = (dir) ->
@@ -87,7 +96,8 @@ knownTarget = (command, target, targets) ->
 # Compile all CoffeeScript sources for Node.
 buildNode = (watch) ->
   ifInstalled 'coffee', ->
-    tryExec "rm -rf lib && coffee -cb#{if watch then 'w' else ''} -o lib src"
+    rmrf 'lib', ->
+      tryExec 'coffee', "-cb#{if watch then 'w' else ''} -o lib src"
 
 # Use Stitch to create a browser bundle.
 bundle = (info) ->
@@ -103,7 +113,8 @@ bundle = (info) ->
       src += info.footer
       fs.writeFileSync fname + '.js', info.header + src
       fs.writeFileSync fname + '.min.js', info.header + uglify(src)
-      tryExec "rm -f build/edge && ln -s #{dir}/ build/edge"
+      try fs.unlinkSync 'build/edge'
+      fs.symlinkSync dir + '/', 'build/edge'
 
 # Compile all CoffeeScript sources for the browser.
 buildBrowser = (info, watch) ->
@@ -126,16 +137,16 @@ clean = (target) ->
   target ?= 'all'
   return unless knownTarget 'clean', target, ['build', 'docs', 'all']
   switch target
-    when 'build' then tryExec 'rm -rf {build,lib}'
-    when 'docs' then tryExec 'rm -rf docs'
-    when 'all' then tryExec 'rm -rf {build,docs,lib}'
+    when 'build' then rmrf dir for dir in ['build', 'lib']
+    when 'docs' then rmrf 'docs'
+    when 'all' then rmrf dir for dir in ['build', 'docs', 'lib']
+  return
 
 # Generate documentation files using Docco.
 docs = ->
-  ifInstalled 'docco', ->
-    files = glob.globSync 'src/**/*.coffee'
-    if files.length > 0
-      tryExec 'docco "' + files.join('" "') + '"'
+  files = glob.globSync 'src/**/*.coffee'
+  if files.length > 0
+    tryExec 'docco', '"' + files.join('" "') + '"'
 
 # Display command help.
 help = ->
@@ -145,7 +156,7 @@ help = ->
 # Build everything and run `npm publish`.
 publish = ->
   build()
-  tryExec 'npm publish'
+  tryExec 'npm', 'publish'
 
 # Get version information.
 ver = JSON.parse(fs.readFileSync(__dirname + '/../package.json')).version
