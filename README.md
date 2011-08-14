@@ -17,8 +17,16 @@ obtained by typing `beans help`. In essence, Beans provides single and
 continuous build routines, as well as documentation generation using
 [Docco](http://jashkenas.github.com/docco/).
 
-If you want to generate documentation from your CoffeeScript source, Beans
-expects Docco to be installed globally (`npm install docco -g`).
+Principal command details:
+
+* `beans build` issues a single build according to the project configuration
+  (see below). If building for the browser is required, source is concatenated
+  to a single file and a minified copy is created.
+* `beans watch` starts a continuous build process, rebuilding when any
+  CoffeeScript file is modified.
+* `beans docs` generates documentation form source. This command expects Docco
+  to be installed globally (`npm install docco -g`).
+* `beans publish` rebuilds everything once and runs `npm publish`.
 
 ## Configuration
 
