@@ -86,6 +86,13 @@ rmrf = (path, fn) ->
 makeDir = (dir) ->
   fs.mkdirSync dir, 0755 unless path.existsSync dir
 
+# Find files based on a global pattern and format them as a shell argument.
+# Call the provided function with the result, if any files are found.
+withFiles = (pattern, fn) ->
+  files = glob.globSync pattern
+  if files.length > 0
+    fn('"' + files.join('" "') + '"')
+
 # Check command argument.
 knownTarget = (command, target, targets) ->
   if targets.indexOf(target) == -1
@@ -147,9 +154,8 @@ clean = (target) ->
 
 # Generate documentation files using Docco.
 docs = ->
-  files = glob.globSync 'src/**/*.coffee'
-  if files.length > 0
-    tryExec 'docco', '"' + files.join('" "') + '"'
+  withFiles 'src/**/*.coffee', (files) ->
+    tryExec 'docco', files
 
 # Display command help.
 help = ->
