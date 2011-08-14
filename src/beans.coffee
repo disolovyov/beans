@@ -1,11 +1,12 @@
-fs     = require 'fs'
-glob   = require 'glob'
-path   = require 'path'
-rimraf = require 'rimraf'
-stitch = require 'stitch'
-uglify = require 'uglify-js'
-which  = require 'which'
-{exec} = require 'child_process'
+fs       = require 'fs'
+glob     = require 'glob'
+nodeunit = require 'nodeunit'
+path     = require 'path'
+rimraf   = require 'rimraf'
+stitch   = require 'stitch'
+uglify   = require 'uglify-js'
+which    = require 'which'
+{exec}   = require 'child_process'
 
 # Defaults for package information.
 defaults =
@@ -86,12 +87,12 @@ rmrf = (path, fn) ->
 makeDir = (dir) ->
   fs.mkdirSync dir, 0755 unless path.existsSync dir
 
-# Find files based on a global pattern and format them as a shell argument.
+# Find files based on a global pattern.
 # Call the provided function with the result, if any files are found.
 withFiles = (pattern, fn) ->
   files = glob.globSync pattern
   if files.length > 0
-    fn('"' + files.join('" "') + '"')
+    fn files
 
 # Check command argument.
 knownTarget = (command, target, targets) ->
@@ -155,7 +156,7 @@ clean = (target) ->
 # Generate documentation files using Docco.
 docs = ->
   withFiles 'src/**/*.coffee', (files) ->
-    tryExec 'docco', files
+    tryExec('docco', '"' + files.join('" "') + '"')
 
 # Display command help.
 help = ->
@@ -166,6 +167,12 @@ help = ->
 publish = ->
   build ->
     tryExec 'npm', 'publish'
+
+# Build everything and run tests using nodeunit.
+test = ->
+  build ->
+    withFiles 'test/**/*.test.coffee', (files) ->
+      nodeunit.reporters.default.run files
 
 # Get version information.
 ver = JSON.parse(fs.readFileSync(__dirname + '/../package.json')).version
@@ -187,6 +194,7 @@ commands =
   docs:    [ docs    , 'Generate documentation files using Docco.' ]
   help:    [ help    , 'Display help (this text).' ]
   publish: [ publish , 'Build everything and run npm publish.' ]
+  test:    [ test    , 'Build everything and run tests using nodeunit.' ]
   version: [ version , 'Display current Beans version.' ]
   watch:   [ watch   , 'Build everything once, then watch for changes.' ]
 

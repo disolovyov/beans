@@ -3,7 +3,7 @@
   "name": "beans",
   "description": "Build tasks for CoffeeScript projects targeting Node and the browser.",
   "keywords": ["browser", "build", "coffeescript"],
-  "version": "0.2.1",
+  "version": "0.2.2",
   "repository": {
     "type": "git",
     "url": "git://github.com/dimituri/beans.git"
@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "glob": "~2.0.7",
+    "nodeunit": "~0.5.3",
     "rimraf": "~1.0.4",
     "stitch": "~0.3.2",
     "uglify-js": "~1.0.6",

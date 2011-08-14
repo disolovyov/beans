@@ -14,8 +14,9 @@ Beans is installed with npm:
 
 This should install a `beans` binary. A list of available commands can be
 obtained by typing `beans help`. In essence, Beans provides single and
-continuous build routines, as well as documentation generation using
-[Docco](http://jashkenas.github.com/docco/).
+continuous build routines, a test runner using
+[nodeunit](https://github.com/caolan/nodeunit), and documentation generation
+using [Docco](http://jashkenas.github.com/docco/).
 
 Principal command details:
 
@@ -24,6 +25,10 @@ Principal command details:
   to a single file and a minified copy is created.
 * `beans watch` starts a continuous build process, rebuilding when any
   CoffeeScript file is modified.
+* `beans test` tries to do a successful build and runs nodeunit tests
+  afterwards. Tests should be placed in the `test` folder (or its subfolders)
+  and should have the `.test.coffee` extension, in order for Beans to locate
+  them.
 * `beans docs` generates documentation form source. This command expects Docco
   to be installed globally (`npm install docco -g`).
 * `beans publish` rebuilds everything once and runs `npm publish`.
