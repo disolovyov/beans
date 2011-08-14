@@ -68,10 +68,11 @@ ifInstalled = (executable, fn) ->
     console.log "This task needs `#{executable}' to be installed and in PATH."
 
 # Try to execute a shell command or fail with an error.
-tryExec = (executable, args) ->
+tryExec = (executable, args, fn) ->
   ifInstalled executable, ->
     proc = exec executable + ' ' + args, (err) ->
       throw err if err
+      fn?()
     proc.stdout.on 'data', (data) ->
       process.stdout.write data.toString()
 
@@ -94,10 +95,11 @@ knownTarget = (command, target, targets) ->
   true
 
 # Compile all CoffeeScript sources for Node.
-buildNode = (watch) ->
+buildNode = (watch, fn) ->
   ifInstalled 'coffee', ->
     rmrf 'lib', ->
-      tryExec 'coffee', "-cb#{if watch then 'w' else ''} -o lib src"
+      tryExec 'coffee', "-cb#{if watch then 'w' else ''} -o lib src", ->
+        fn?()
 
 # Use Stitch to create a browser bundle.
 bundle = (info) ->
@@ -126,10 +128,11 @@ buildBrowser = (info, watch) ->
           bundle info
 
 # Compile CoffeeScript source for Node and browsers.
-build = ->
+build = (fn) ->
   info = loadInfo()
-  buildNode()
   buildBrowser info if info.browser
+  buildNode false, ->
+    fn?()
 
 # Remove generated directories to allow for a clean build
 # or just tidy things up.
@@ -155,8 +158,8 @@ help = ->
 
 # Build everything and run `npm publish`.
 publish = ->
-  build()
-  tryExec 'npm', 'publish'
+  build ->
+    tryExec 'npm', 'publish'
 
 # Get version information.
 ver = JSON.parse(fs.readFileSync(__dirname + '/../package.json')).version
