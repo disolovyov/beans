@@ -28,7 +28,7 @@ loadInfo = ->
   package = JSON.parse(fs.readFileSync 'package.json')
   for key in ['author', 'name', 'description', 'version']
     unless package[key]?
-      throw new Error "Section `#{key}' required in package.json."
+      throw new Error "Section \"#{key}\" required in package.json."
     info[key] = package[key]
   info.browserName = info.browserPrefix + info.name
 
@@ -65,7 +65,7 @@ loadInfo = ->
 ifInstalled = (executable, fn) ->
   which executable, (err) ->
     return fn() unless err
-    console.log "This task needs `#{executable}' to be installed and in PATH."
+    console.log "This task needs \"#{executable}\" to be installed and in PATH."
 
 # Try to execute a shell command or fail with an error.
 tryExec = (executable, args, fn) ->
@@ -89,7 +89,7 @@ makeDir = (dir) ->
 # Check command argument.
 knownTarget = (command, target, targets) ->
   if targets.indexOf(target) == -1
-    console.log "Unknown #{command} target `#{target}'."
+    console.log "Unknown #{command} target \"#{target}\"."
     console.log "Try one of: #{targets.join ', '}."
     return false
   true
@@ -192,7 +192,7 @@ run = ->
   else if commands[args[0]]?
     commands[args[0]][0](args.slice(1)...)
   else
-    console.log "Don't know how to `#{args[0]}'."
+    console.log "Don't know how to \"#{args[0]}\"."
 
 # Exports commands for in-Node use and command entry point.
 module.exports =
