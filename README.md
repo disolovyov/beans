@@ -49,6 +49,7 @@ the following build defaults:
 
     {
       "browser": true,
+      "browserPaths": ['src'],
       "browserPrefix": "",
       "copyrightFrom": <current year>,
       "license": <unspecified>
@@ -61,6 +62,8 @@ pair is optional. In detail:
 * `browser` is a switch to turn browser bundling on or off. The bundle is
   created using [Stitch](https://github.com/sstephenson/stitch) and minified
   with [UglifyJS](http://marijnhaverbeke.nl/uglifyjs).
+* `browserPaths` is an array of source paths for Stitch. Relative paths are
+  resolved to the current working directory.
 * `browserPrefix` is used as a prefix for browser bundle filenames.
 * `copyrightFrom` is a starting copyright year (e.g. 2010) that defaults to the
   current year. The browser bundle header comment will have a copyright notice

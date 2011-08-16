@@ -12,6 +12,7 @@ which    = require 'which'
 # Defaults for package information.
 defaults =
   browser: true
+  browserPaths: ['src']
   browserPrefix: ''
   copyrightFrom: (new Date).getFullYear()
   license: ''
@@ -126,9 +127,10 @@ buildNode = (watch, fn) ->
 
 # Use Stitch to create a browser bundle.
 bundle = (info) ->
+  paths = (fs.realpathSync path for path in info.browserPaths)
   stitch
     .createPackage
-      paths: [fs.realpathSync 'src']
+      paths: paths
     .compile (err, src) ->
       throw err if err
       makeDir 'build'
