@@ -1,10 +1,16 @@
 #!/usr/bin/env node
 
 try {
+  // Try to run globally.
   require('../lib/beans').run();
 }
 catch (e) {
-  // First time compilation case.
-  require('coffee-script');
-  require('../src/beans').run();
+  try {
+    // Try to run locally.
+    require('../beans/lib/beans').run();
+  } catch (e) {
+    // Run from source.
+    require('coffee-script');
+    require('../src/beans').run();
+  }
 }

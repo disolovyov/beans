@@ -8,15 +8,23 @@ CoffeeScript projects.
 
 ## Usage
 
-Beans is installed with npm:
+Beans is installed with npm. To have a global up-to-date `beans` binary in
+your PATH, install globally:
 
     $ npm install beans -g
 
-This should install a `beans` binary. A list of available commands can be
-obtained by typing `beans help`. In essence, Beans provides single and
-continuous build routines, a test runner using
-[nodeunit](https://github.com/caolan/nodeunit), and documentation generation
-using [Docco](http://jashkenas.github.com/docco/).
+A less convenient, but more stable solution is to have a local version of
+Beans, specific for each of your authored packages. To do this, first install
+Beans globally, then run `beans scripts`. This will add Beans to your
+`devDependencies` and register commands like `build` and `docs` in
+package.json. These commands can then be run like so:
+
+    $ npm run-script build
+
+A list of available commands can be obtained by typing `beans help`. In
+essence, Beans provides single and continuous build routines, a test runner
+using [nodeunit](https://github.com/caolan/nodeunit), and documentation
+generation using [Docco](http://jashkenas.github.com/docco/).
 
 Principal command details:
 

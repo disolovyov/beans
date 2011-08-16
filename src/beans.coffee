@@ -2,6 +2,7 @@ fs       = require 'fs'
 glob     = require 'glob'
 nodeunit = require 'nodeunit'
 path     = require 'path'
+readline = require 'readline'
 rimraf   = require 'rimraf'
 stitch   = require 'stitch'
 uglify   = require 'uglify-js'
@@ -94,6 +95,20 @@ withFiles = (pattern, fn) ->
   if files.length > 0
     fn files
 
+# Ask user a question an run a callback when answered.
+# The *answers* argument is an array of accepted answers.
+ask = (question, answers, fn) ->
+  {stdin, stdout} = process
+  stdout.write question + ' (' + answers.join('/') + ') '
+  stdin.resume()
+  stdin.on 'data', (answer) ->
+    answer = answer.toString().trim()
+    if answers.indexOf(answer) != -1
+      stdin.pause()
+      fn answer
+    else
+      stdout.write 'Please answer with one of: (' + answers.join('/') + ') '
+
 # Check command argument.
 knownTarget = (command, target, targets) ->
   if targets.indexOf(target) == -1
@@ -168,6 +183,18 @@ publish = ->
   build ->
     tryExec 'npm', 'publish'
 
+# Register beans in package.json scripts.
+scripts = ->
+  ask 'This will modify package.json. Proceed?', ['y', 'n'], (answer) ->
+    if answer == 'y'
+      package = JSON.parse(fs.readFileSync 'package.json')
+      deps = package.devDependencies ||= {}
+      deps.beans ||= '~' + ver
+      scripts = package.scripts ||= {}
+      for script in ['build', 'clean', 'docs', 'publish', 'test', 'watch']
+       scripts[script] = 'beans ' + script
+      fs.writeFileSync 'package.json', JSON.stringify(package, null, 2)
+
 # Build everything and run tests using nodeunit.
 test = ->
   build ->
@@ -194,6 +221,7 @@ commands =
   docs:    [ docs    , 'Generate documentation files using Docco.' ]
   help:    [ help    , 'Display help (this text).' ]
   publish: [ publish , 'Build everything and run npm publish.' ]
+  scripts: [ scripts , 'Register beans in package.json scripts.' ]
   test:    [ test    , 'Build everything and run tests using nodeunit.' ]
   version: [ version , 'Display current Beans version.' ]
   watch:   [ watch   , 'Build everything once, then watch for changes.' ]
