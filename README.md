@@ -52,7 +52,8 @@ the following build defaults:
       "browserPaths": ['src'],
       "browserPrefix": "",
       "copyrightFrom": <current year>,
-      "license": <unspecified>
+      "license": <unspecified>,
+      "sourcePath": 'src'
     }
 
 A sample `beans.json` file can be found in Beans own source, since Beans is
@@ -70,3 +71,6 @@ pair is optional. In detail:
   featuring a span from the configured to year to current one (e.g. 2010-2011).
 * `license` is the license you're using for the project. If a license is
   specified, it is displayes in the browser bundle header comment.
+* `sourcePath` is the CoffeeScript source path. All of its contents are going
+  to be compiled to JavaScript and placed in `lib`. The folder hierarchy is
+  kept intact.

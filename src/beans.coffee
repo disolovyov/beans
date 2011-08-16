@@ -16,6 +16,7 @@ defaults =
   browserPrefix: ''
   copyrightFrom: (new Date).getFullYear()
   license: ''
+  sourcePath: 'src'
 
 # Load package information from multiple sources.
 loadInfo = ->
@@ -118,11 +119,20 @@ knownTarget = (command, target, targets) ->
     return false
   true
 
+# Watch a list of files and run a callback when it's modified.
+watchFiles = (files, fn) ->
+  for file in files
+    do (file) ->
+      fs.watchFile file, {persistent: true, interval: 500}, (curr, prev) ->
+        if curr.mtime.getTime() isnt prev.mtime.getTime()
+          fn file
+
 # Compile all CoffeeScript sources for Node.
-buildNode = (watch, fn) ->
+buildNode = (info, watch, fn) ->
   ifInstalled 'coffee', ->
     rmrf 'lib', ->
-      tryExec 'coffee', "-cb#{if watch then 'w' else ''} -o lib src", ->
+      src = info.sourcePath
+      tryExec 'coffee', "-cb#{if watch then 'w' else ''} -o lib #{src}", ->
         fn?()
 
 # Use Stitch to create a browser bundle.
@@ -147,16 +157,15 @@ bundle = (info) ->
 buildBrowser = (info, watch) ->
   bundle info
   if watch
-    for file in glob.globSync 'src/**/*.coffee'
-      fs.watchFile file, {persistent: true, interval: 500}, (curr, prev) ->
-        if curr.mtime isnt prev.mtime
-          bundle info
+    paths = (path + '/**/*.coffee' for path in info.browserPaths)
+    watchFiles glob.globSync("{#{paths.join()}}"), ->
+      bundle info
 
 # Compile CoffeeScript source for Node and browsers.
 build = (fn) ->
   info = loadInfo()
   buildBrowser info if info.browser
-  buildNode false, ->
+  buildNode info, false, ->
     fn?()
 
 # Remove generated directories to allow for a clean build
@@ -172,7 +181,8 @@ clean = (target) ->
 
 # Generate documentation files using Docco.
 docs = ->
-  withFiles 'src/**/*.coffee', (files) ->
+  info = loadInfo()
+  withFiles info.sourcePath + '/**/*.coffee', (files) ->
     tryExec('docco', '"' + files.join('" "') + '"')
 
 # Display command help.
@@ -213,7 +223,7 @@ version = ->
 # Build everything once, then watch for changes.
 watch = ->
   info = loadInfo()
-  buildNode true
+  buildNode info, true
   buildBrowser info, true if info.browser
 
 # Supported commands list.
