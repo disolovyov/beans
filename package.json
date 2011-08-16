@@ -3,7 +3,7 @@
   "name": "beans",
   "description": "Build tasks for CoffeeScript projects targeting Node and the browser.",
   "keywords": ["browser", "build", "coffeescript"],
-  "version": "0.2.4",
+  "version": "0.2.5",
   "repository": {
     "type": "git",
     "url": "git://github.com/dimituri/beans.git"

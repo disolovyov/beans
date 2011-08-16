@@ -157,7 +157,7 @@ bundle = (info) ->
 buildBrowser = (info, watch) ->
   bundle info
   if watch
-    paths = (path + '/**/*.coffee' for path in info.browserPaths)
+    paths = (path.join(pth, '**/*.coffee') for pth in info.browserPaths)
     watchFiles glob.globSync("{#{paths.join()}}"), ->
       bundle info
 
@@ -182,7 +182,7 @@ clean = (target) ->
 # Generate documentation files using Docco.
 docs = ->
   info = loadInfo()
-  withFiles info.sourcePath + '/**/*.coffee', (files) ->
+  withFiles path.join(info.sourcePath, '**/*.coffee'), (files) ->
     tryExec('docco', '"' + files.join('" "') + '"')
 
 # Display command help.
@@ -214,7 +214,8 @@ test = ->
       nodeunit.reporters.default.run files
 
 # Get version information.
-ver = JSON.parse(fs.readFileSync(__dirname + '/../package.json')).version
+packageFile = path.resolve(__dirname, '../package.json')
+ver = JSON.parse(fs.readFileSync(packageFile)).version
 
 # Display version information.
 version = ->
