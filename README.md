@@ -43,14 +43,15 @@ Principal command details:
 
 ## Configuration
 
-When building for the browser, Beans collects some information from
-`package.json` and `beans.json` files. Create a `beans.json` file to override
-the following build defaults:
+Beans collects some information from `package.json` and `beans.json` files.
+Most of it is used when building for the browser. Create a `beans.json` file
+to override the following build defaults:
 
     {
       "browser": true,
       "browserPaths": ['src'],
       "browserPrefix": "",
+      "browserRootModule": <same as package name>,
       "copyrightFrom": <current year>,
       "license": <unspecified>,
       "sourcePath": 'src'
@@ -66,6 +67,11 @@ pair is optional. In detail:
 * `browserPaths` is an array of source paths for Stitch. Relative paths are
   resolved to the current working directory.
 * `browserPrefix` is used as a prefix for browser bundle filenames.
+* `browserRootModule` is a package module that is required automatically in
+  the browser and attached to the global object. Beans makes Stitch's `require`
+  run in a closure, so this function won't be available. The only exposed
+  module is the specified root module. Make sure it exports everything you
+  need.
 * `copyrightFrom` is a starting copyright year (e.g. 2010) that defaults to the
   current year. The browser bundle header comment will have a copyright notice
   featuring a span from the configured to year to current one (e.g. 2010-2011).

@@ -14,6 +14,7 @@ defaults =
   browser: true
   browserPaths: ['src']
   browserPrefix: ''
+  browserRootModule: null
   copyrightFrom: (new Date).getFullYear()
   license: ''
   sourcePath: 'src'
@@ -34,6 +35,7 @@ loadInfo = ->
     unless package[key]?
       throw new Error "Section \"#{key}\" required in package.json."
     info[key] = package[key]
+  info.browserRootModule ?= info.name
   info.browserName = info.browserPrefix + info.name
 
   # Copyright year message.
@@ -49,8 +51,8 @@ loadInfo = ->
   else
     license = 'Contact author for licensing information'
 
-  # Source header for browser bundles.
-  info.header = """
+  # Source header comment for browser bundles.
+  info.headerComment = """
   /**
    * #{info.browserName} #{info.version} (browser bundle)
    * #{info.description}
@@ -58,10 +60,16 @@ loadInfo = ->
    * Copyright (c) #{copyright} #{info.author}
    * #{license}
    */
+
   """
 
-  # Source footer for browser bundles.
-  info.footer = "this.#{info.browserName} = require('#{info.browserName}');"
+  # Source header and footer for browser bundles.
+  info.header = "this['#{info.name}'] = (function(){"
+  info.footer = """
+  var module = this.require('#{info.browserRootModule}');
+  module.version = '#{info.version}';
+  return module; }).call({});
+  """
   info
 
 # Run the specified function if a given executable is installed,
@@ -147,9 +155,9 @@ bundle = (info) ->
       makeDir 'build/' + info.version
       dir = fs.realpathSync 'build/' + info.version
       fname = dir + '/' + info.browserName
-      src += info.footer
-      fs.writeFileSync fname + '.js', info.header + src
-      fs.writeFileSync fname + '.min.js', info.header + uglify(src)
+      src = info.header + src + info.footer
+      fs.writeFileSync fname + '.js', info.headerComment + src
+      fs.writeFileSync fname + '.min.js', info.headerComment + uglify(src)
       try fs.unlinkSync 'build/edge'
       fs.symlinkSync dir + '/', 'build/edge'
 
