@@ -211,8 +211,9 @@ scripts = ->
       deps = package.devDependencies ||= {}
       deps.beans ||= '~' + ver
       scripts = package.scripts ||= {}
-      for script in ['build', 'clean', 'docs', 'publish', 'test', 'watch']
-       scripts[script] = 'beans ' + script
+      for script in ['build', 'clean', 'docs', 'test', 'watch']
+        scripts[script] = 'beans ' + script
+      scripts.prepublish = 'beans build'
       fs.writeFileSync 'package.json', JSON.stringify(package, null, 2)
 
 # Build everything and run tests using nodeunit.
