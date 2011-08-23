@@ -49,12 +49,14 @@ to override the following build defaults:
 
     {
       "browser": true,
-      "browserPaths": ['src'],
+      "browserPaths": ['lib'],
       "browserPrefix": "",
       "browserRootModule": <same as package name>,
       "copyrightFrom": <current year>,
       "license": <unspecified>,
-      "sourcePath": 'src'
+      "onCompile": null,
+      "sourcePath": 'src',
+      "targetPath": 'lib'
     }
 
 A sample `beans.json` file can be found in Beans own source, since Beans is
@@ -65,7 +67,9 @@ pair is optional. In detail:
   created using [Stitch](https://github.com/sstephenson/stitch) and minified
   with [UglifyJS](http://marijnhaverbeke.nl/uglifyjs).
 * `browserPaths` is an array of source paths for Stitch. Relative paths are
-  resolved to the current working directory.
+  resolved to the current working directory. Default path is the compilation
+  target path: this is okay, since bundling happens only after everything is
+  compiled.
 * `browserPrefix` is used as a prefix for browser bundle filenames.
 * `browserRootModule` is a package module that is required automatically in
   the browser and attached to the global object. Beans makes Stitch's `require`
@@ -78,5 +82,5 @@ pair is optional. In detail:
 * `license` is the license you're using for the project. If a license is
   specified, it is displayes in the browser bundle header comment.
 * `sourcePath` is the CoffeeScript source path. All of its contents are going
-  to be compiled to JavaScript and placed in `lib`. The folder hierarchy is
-  kept intact.
+  to be compiled to JavaScript and placed in `targetPath`. The folder hierarchy
+  is kept intact.
