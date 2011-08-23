@@ -170,7 +170,7 @@ compile = (info, file) ->
   target = info.targetPath + source.replace(/.coffee$/, '.js')
   makeDir path.dirname(target)
   fs.writeFileSync target, src
-  info.onCompile?(target, src)
+  info.onCompile? target, src
   ts = (new Date()).toLocaleTimeString()
   source = info.sourcePath.substr(path.resolve('.').length + 1) + source
   console.log ts + ' - compiled ' + source
@@ -183,7 +183,10 @@ buildNode = (info, watch, fn) ->
         compile info, file
       if watch
         watchFiles files, (file) ->
-          compile info, file
+          try
+            compile info, file
+          catch err
+            console.log err.stack
 
 # Use Stitch to create a browser bundle.
 bundle = (info) ->
