@@ -153,8 +153,6 @@ watchFiles = (files, fn) ->
         if curr.mtime.getTime() isnt prev.mtime.getTime()
           fn file
 
-# Return current time formatted as HH:mm:ss.
-
 # Compile one CoffeeScript file.
 # Existing event handlers are synchronously invoked in the process.
 # Each event handler is passed a subject and a context (source file).
