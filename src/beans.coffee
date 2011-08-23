@@ -13,7 +13,7 @@ which    = require 'which'
 # Defaults for package information.
 defaults =
   browser: true
-  browserPaths: ['src']
+  browserPaths: ['lib']
   browserPrefix: ''
   browserRootModule: null
   copyrightFrom: (new Date).getFullYear()
@@ -181,6 +181,7 @@ buildNode = (info, watch, fn) ->
     withFiles path.join(info.sourcePath, '**/*.coffee'), (files) ->
       for file in files
         compile info, file
+      fn?()
       if watch
         watchFiles files, (file) ->
           try
@@ -210,15 +211,15 @@ bundle = (info) ->
 buildBrowser = (info, watch) ->
   bundle info
   if watch
-    paths = (path.join(pth, '**/*.coffee') for pth in info.browserPaths)
+    paths = (path.join(pth, '**/*.{coffee,js}') for pth in info.browserPaths)
     watchFiles glob.globSync("{#{paths.join()}}"), ->
       bundle info
 
 # Compile CoffeeScript source for Node and browsers.
 build = (fn) ->
   info = loadInfo()
-  buildBrowser info if info.browser
   buildNode info, false, ->
+    buildBrowser info if info.browser
     fn?()
 
 # Remove generated directories to allow for a clean build
@@ -278,8 +279,8 @@ version = ->
 # Build everything once, then watch for changes.
 watch = ->
   info = loadInfo()
-  buildNode info, true
-  buildBrowser info, true if info.browser
+  buildNode info, true, ->
+    buildBrowser info, true if info.browser
 
 # Supported commands list.
 commands =
