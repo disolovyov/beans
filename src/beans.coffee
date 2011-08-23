@@ -34,7 +34,7 @@ loadInfo = ->
 
   # Load compilation event handler, if any.
   if info.onCompile?
-    info.onCompile = require info.onCompile
+    info.onCompile = require path.resolve(info.onCompile)
 
   # Expands source and target paths.
   info.sourcePath = path.resolve info.sourcePath
