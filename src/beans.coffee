@@ -1,3 +1,4 @@
+coffee   = require 'coffee-script'
 fs       = require 'fs'
 glob     = require 'glob'
 nodeunit = require 'nodeunit'
@@ -17,7 +18,9 @@ defaults =
   browserRootModule: null
   copyrightFrom: (new Date).getFullYear()
   license: ''
+  onCompile: null
   sourcePath: 'src'
+  targetPath: 'lib'
 
 # Load package information from multiple sources.
 loadInfo = ->
@@ -28,6 +31,14 @@ loadInfo = ->
     info = {}
   for key of defaults
     info[key] = defaults[key] unless info[key]?
+
+  # Load compilation event handler, if any.
+  if info.onCompile?
+    info.onCompile = require info.onCompile
+
+  # Expands source and target paths.
+  info.sourcePath = path.resolve info.sourcePath
+  info.targetPath = path.resolve info.targetPath
 
   # Load package.json and override existing significant values.
   package = JSON.parse(fs.readFileSync 'package.json')
@@ -95,8 +106,15 @@ rmrf = (path, fn) ->
     fn?()
 
 # Safely make a directory with default permissions.
+# If its parents in path are missing, they are constructed as well.
 makeDir = (dir) ->
-  fs.mkdirSync dir, 0755 unless path.existsSync dir
+  missing = []
+  dir = path.resolve dir
+  until path.existsSync dir
+    missing.unshift dir
+    dir = path.dirname dir
+  for dir in missing
+    fs.mkdirSync dir, 0755
 
 # Find files based on a global pattern.
 # Call the provided function with the result, if any files are found.
@@ -135,13 +153,37 @@ watchFiles = (files, fn) ->
         if curr.mtime.getTime() isnt prev.mtime.getTime()
           fn file
 
+# Return current time formatted as HH:mm:ss.
+
+# Compile one CoffeeScript file.
+# Existing event handlers are synchronously invoked in the process.
+# Each event handler is passed a subject and a context (source file).
+compile = (info, file) ->
+  file = fs.realpathSync file
+  src = fs.readFileSync file, 'utf8'
+  try
+    src = coffee.compile src, bare: true
+  catch err
+    err.message = "In #{file}, #{err.message}"
+    throw err
+  source = file.substr(info.sourcePath.length)
+  target = info.targetPath + source.replace(/.coffee$/, '.js')
+  makeDir path.dirname(target)
+  fs.writeFileSync target, src
+  info.onCompile?(target, src)
+  ts = (new Date()).toLocaleTimeString()
+  source = info.sourcePath.substr(path.resolve('.').length + 1) + source
+  console.log ts + ' - compiled ' + source
+
 # Compile all CoffeeScript sources for Node.
 buildNode = (info, watch, fn) ->
-  ifInstalled 'coffee', ->
-    rmrf 'lib', ->
-      src = info.sourcePath
-      tryExec 'coffee', "-cb#{if watch then 'w' else ''} -o lib #{src}", ->
-        fn?()
+  rmrf info.targetPath, ->
+    withFiles path.join(info.sourcePath, '**/*.coffee'), (files) ->
+      for file in files
+        compile info, file
+      if watch
+        watchFiles files, (file) ->
+          compile info, file
 
 # Use Stitch to create a browser bundle.
 bundle = (info) ->
