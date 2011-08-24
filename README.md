@@ -49,7 +49,7 @@ to override the following build defaults:
 
     {
       "browser": true,
-      "browserPaths": ['lib'],
+      "browserPaths": [<value of targetPath>],
       "browserPrefix": "",
       "browserRootModule": <same as package name>,
       "copyrightFrom": <current year>,

@@ -13,7 +13,7 @@ which    = require 'which'
 # Defaults for package information.
 defaults =
   browser: true
-  browserPaths: ['lib']
+  browserPaths: null
   browserPrefix: ''
   browserRootModule: null
   copyrightFrom: (new Date).getFullYear()
@@ -36,7 +36,8 @@ loadInfo = ->
   if info.onCompile?
     info.onCompile = require path.resolve(info.onCompile)
 
-  # Expands source and target paths.
+  # Set source and target paths.
+  info.browserPaths ?= [info.targetPath]
   info.sourcePath = path.resolve info.sourcePath
   info.targetPath = path.resolve info.targetPath
 
