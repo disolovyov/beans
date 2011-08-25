@@ -176,17 +176,16 @@ compile = (info, file) ->
 
 # Compile all CoffeeScript sources for Node.
 buildNode = (info, watch, fn) ->
-  rmrf info.targetPath, ->
-    withFiles path.join(info.sourcePath, '**/*.coffee'), (files) ->
-      for file in files
-        compile info, file
-      fn?()
-      if watch
-        watchFiles files, (file) ->
-          try
-            compile info, file
-          catch err
-            console.log err.stack
+  withFiles path.join(info.sourcePath, '**/*.coffee'), (files) ->
+    for file in files
+      compile info, file
+    fn?()
+    if watch
+      watchFiles files, (file) ->
+        try
+          compile info, file
+        catch err
+          console.log err.stack
 
 # Use Stitch to create a browser bundle.
 bundle = (info) ->
