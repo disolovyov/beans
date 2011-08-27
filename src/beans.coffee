@@ -12,15 +12,17 @@ which    = require 'which'
 
 # Defaults for package information.
 defaults =
-  browser: true
-  browserPaths: null
-  browserPrefix: ''
-  browserRootModule: null
+  browser:
+    enabled: true
+    paths: null
+    prefix: ''
+    rootModule: null
   copyrightFrom: (new Date).getFullYear()
   license: ''
-  onCompile: null
-  sourcePath: 'src'
-  targetPath: 'lib'
+  hooks:
+    compile: null
+  paths:
+    src: lib
 
 # Fill in missing keys in an object with default values.
 # Works recursively with standard types.
@@ -43,17 +45,18 @@ loadInfo = ->
     info = JSON.parse(fs.readFileSync 'beans.json')
   catch e
     info = {}
-  for key of defaults
-    info[key] = defaults[key] unless info[key]?
+  info = fillDefaults info, defaults
 
-  # Load compilation event handler, if any.
-  if info.onCompile?
-    info.onCompile = require path.resolve(info.onCompile)
+  # Load hooked event handlers, if any.
+  for hook, module of info.hooks
+    info.hooks[hook] = require path.resolve(module) if module?
 
   # Set source and target paths.
-  info.browserPaths ?= [info.targetPath]
-  info.sourcePath = path.resolve info.sourcePath
-  info.targetPath = path.resolve info.targetPath
+  info.browser.paths ?= (value for _, value of info.paths)
+  paths = {}
+  for key, value of info.paths
+    paths[path.resolve key] = path.resolve value
+  info.paths = paths
 
   # Load package.json and override existing significant values.
   package = JSON.parse(fs.readFileSync 'package.json')
@@ -61,8 +64,8 @@ loadInfo = ->
     unless package[key]?
       throw new Error "Section \"#{key}\" required in package.json."
     info[key] = package[key]
-  info.browserRootModule ?= info.name
-  info.browserName = info.browserPrefix + info.name
+  info.browser.rootModule ?= info.name
+  info.browser.name = info.browser.prefix + info.name
 
   # Copyright year message.
   currentYear = (new Date).getFullYear()
@@ -80,7 +83,7 @@ loadInfo = ->
   # Source header comment for browser bundles.
   info.headerComment = """
   /**
-   * #{info.browserName} #{info.version} (browser bundle)
+   * #{info.browser.name} #{info.version} (browser bundle)
    * #{info.description}
    *
    * Copyright (c) #{copyright} #{info.author}
@@ -92,7 +95,7 @@ loadInfo = ->
   # Source header and footer for browser bundles.
   info.header = "this['#{info.name}'] = (function(){"
   info.footer = """
-  var module = this.require('#{info.browserRootModule}');
+  var module = this.require('#{info.browser.rootModule}');
   module.version = '#{info.version}';
   return module; }).call({});
   """
@@ -171,7 +174,7 @@ watchFiles = (files, fn) ->
 # Compile one CoffeeScript file.
 # Existing event handlers are synchronously invoked in the process.
 # Each event handler is passed a subject and a context (source file).
-compile = (info, file) ->
+compile = (info, file, sourcePath, targetPath) ->
   file = fs.realpathSync file
   src = fs.readFileSync file, 'utf8'
   try
@@ -179,31 +182,33 @@ compile = (info, file) ->
   catch err
     err.message = "In #{file}, #{err.message}"
     throw err
-  source = file.substr(info.sourcePath.length)
-  target = info.targetPath + source.replace(/.coffee$/, '.js')
+  source = file.substr(sourcePath.length)
+  target = targetPath + source.replace(/.coffee$/, '.js')
   makeDir path.dirname(target)
   fs.writeFileSync target, src
-  info.onCompile? target, src
+  info.hooks.compile? target, src
   ts = (new Date()).toLocaleTimeString()
-  source = info.sourcePath.substr(path.resolve('.').length + 1) + source
+  source = sourcePath.substr(path.resolve('.').length + 1) + source
   console.log ts + ' - compiled ' + source
 
 # Compile all CoffeeScript sources for Node.
 buildNode = (info, watch, fn) ->
-  withFiles path.join(info.sourcePath, '**/*.coffee'), (files) ->
-    for file in files
-      compile info, file
-    fn?()
-    if watch
-      watchFiles files, (file) ->
-        try
-          compile info, file
-        catch err
-          console.log err.stack
+  for sourcePath, targetPath of info.paths
+    do (sourcePath, targetPath) ->
+      withFiles path.join(sourcePath, '**/*.coffee'), (files) ->
+        for file in files
+          compile info, file, sourcePath, targetPath
+        fn?()
+        if watch
+          watchFiles files, (file) ->
+            try
+              compile info, file, sourcePath, targetPath
+            catch err
+              console.log err.stack
 
 # Use Stitch to create a browser bundle.
 bundle = (info) ->
-  paths = (fs.realpathSync path for path in info.browserPaths)
+  paths = (fs.realpathSync path for path in info.browser.paths)
   stitch
     .createPackage
       paths: paths
@@ -212,7 +217,7 @@ bundle = (info) ->
       makeDir 'build'
       makeDir 'build/' + info.version
       dir = fs.realpathSync 'build/' + info.version
-      fname = dir + '/' + info.browserName
+      fname = dir + '/' + info.browser.name
       src = info.header + src + info.footer
       fs.writeFileSync fname + '.js', info.headerComment + src
       fs.writeFileSync fname + '.min.js', info.headerComment + uglify(src)
@@ -223,7 +228,7 @@ bundle = (info) ->
 buildBrowser = (info, watch) ->
   bundle info
   if watch
-    paths = (path.join(pth, '**/*.{coffee,js}') for pth in info.browserPaths)
+    paths = (path.join(pth, '**/*.{coffee,js}') for pth in info.browser.paths)
     watchFiles glob.globSync("{#{paths.join()}}"), ->
       bundle info
 
@@ -231,7 +236,7 @@ buildBrowser = (info, watch) ->
 build = (fn) ->
   info = loadInfo()
   buildNode info, false, ->
-    buildBrowser info if info.browser
+    buildBrowser info if info.browser.enabled
     fn?()
 
 # Remove generated directories to allow for a clean build
@@ -248,7 +253,8 @@ clean = (target) ->
 # Generate documentation files using Docco.
 docs = ->
   info = loadInfo()
-  withFiles path.join(info.sourcePath, '**/*.coffee'), (files) ->
+  paths = (path.join(pth, '**/*.coffee') for pth of info.paths)
+  withFiles "{#{paths.join()}}", (files) ->
     tryExec('docco', '"' + files.join('" "') + '"')
 
 # Display command help.
@@ -292,7 +298,7 @@ version = ->
 watch = ->
   info = loadInfo()
   buildNode info, true, ->
-    buildBrowser info, true if info.browser
+    buildBrowser info, true if info.browser.enabled
 
 # Supported commands list.
 commands =

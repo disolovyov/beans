@@ -48,30 +48,35 @@ Most of it is used when building for the browser. Create a `beans.json` file
 to override the following build defaults:
 
     {
-      "browser": true,
-      "browserPaths": [<value of targetPath>],
-      "browserPrefix": "",
-      "browserRootModule": <same as package name>,
+      "browser": {
+        "enabled": true,
+        "paths": [<values of paths object>],
+        "prefix": "",
+        "rootModule": <same as package name>
+      },
       "copyrightFrom": <current year>,
       "license": <unspecified>,
-      "onCompile": null,
-      "sourcePath": 'src',
-      "targetPath": 'lib'
+      "hooks": {
+        "compile": null
+      },
+      "paths": {
+        "src": "lib"
+      }
     }
 
 A sample `beans.json` file can be found in Beans own source, since Beans is
 written in CoffeeScript and authored with itself, of course. Each key-value
 pair is optional. In detail:
 
-* `browser` is a switch to turn browser bundling on or off. The bundle is
-  created using [Stitch](https://github.com/sstephenson/stitch) and minified
+* `browser.enabled` is a switch to turn browser bundling on or off. The bundle
+  is created using [Stitch](https://github.com/sstephenson/stitch) and minified
   with [UglifyJS](http://marijnhaverbeke.nl/uglifyjs).
-* `browserPaths` is an array of source paths for Stitch. Relative paths are
+* `browser.paths` is an array of source paths for Stitch. Relative paths are
   resolved to the current working directory. Default path is the compilation
-  target path: this is okay, since bundling happens only after everything is
-  compiled.
-* `browserPrefix` is used as a prefix for browser bundle filenames.
-* `browserRootModule` is a package module that is required automatically in
+  target paths array: this is okay, since bundling happens only after
+  everything is compiled.
+* `browser.prefix` is used as a prefix for browser bundle filenames.
+* `browser.rootModule` is a package module that is required automatically in
   the browser and attached to the global object. Beans makes Stitch's `require`
   run in a closure, so this function won't be available. The only exposed
   module is the specified root module. Make sure it exports everything you
@@ -81,6 +86,7 @@ pair is optional. In detail:
   featuring a span from the configured to year to current one (e.g. 2010-2011).
 * `license` is the license you're using for the project. If a license is
   specified, it is displayes in the browser bundle header comment.
-* `sourcePath` is the CoffeeScript source path. All of its contents are going
-  to be compiled to JavaScript and placed in `targetPath`. The folder hierarchy
-  is kept intact.
+* `paths` is an object with source paths as keys and target paths as values.
+  CoffeeScript files in source paths are going to be compiled to JavaScript and
+  placed in the corresponding target paths. The folder hierarchy is kept
+  intact.
