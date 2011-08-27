@@ -22,6 +22,20 @@ defaults =
   sourcePath: 'src'
   targetPath: 'lib'
 
+# Fill in missing keys in an object with default values.
+# Works recursively with standard types.
+fillDefaults = (obj, defaults) ->
+  result = {}
+  for key, value of defaults
+    result[key] = if obj[key]
+      if (typeof obj[key] is 'object') and (typeof value is 'object')
+        fillDefaults obj[key], value
+      else
+        obj[key]
+    else
+      value
+  result
+
 # Load package information from multiple sources.
 loadInfo = ->
   # Load beans.json and add unset defaults.
