@@ -193,18 +193,31 @@ compile = (info, file, sourcePath, targetPath) ->
 
 # Compile all CoffeeScript sources for Node.
 buildNode = (info, watch, fn) ->
+  console.log info
+
+  # Calculate path count.
+  count = 0
+  count++ for _ of info.paths
+
+  # Iterate through, while counting compiled paths.
+  compiled = 0
   for sourcePath, targetPath of info.paths
     do (sourcePath, targetPath) ->
       withFiles path.join(sourcePath, '**/*.coffee'), (files) ->
         for file in files
           compile info, file, sourcePath, targetPath
-        fn?()
-        if watch
-          watchFiles files, (file) ->
-            try
-              compile info, file, sourcePath, targetPath
-            catch err
-              console.log err.stack
+
+        # Run the callback and watchers only after everything is compiled.
+        console.log 'compiled: ' + compiled
+        if ++compiled is count
+          console.log 'running callback'
+          fn?()
+          if watch
+            watchFiles files, (file) ->
+              try
+                compile info, file, sourcePath, targetPath
+              catch err
+                console.log err.stack
 
 # Use Stitch to create a browser bundle.
 bundle = (info) ->
