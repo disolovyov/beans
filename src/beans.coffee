@@ -206,15 +206,17 @@ buildNode = (info, watch, fn) ->
         for file in files
           compile info, file, sourcePath, targetPath
 
-        # Run the callback and watchers only after everything is compiled.
+        # Set a watcher for the current path.
+        if watch
+          watchFiles files, (file) ->
+            try
+              compile info, file, sourcePath, targetPath
+            catch err
+              console.log err.stack
+
+        # Run the callback only after everything is compiled.
         if ++compiled is count
           fn?()
-          if watch
-            watchFiles files, (file) ->
-              try
-                compile info, file, sourcePath, targetPath
-              catch err
-                console.log err.stack
 
 # Use Stitch to create a browser bundle.
 bundle = (info) ->
