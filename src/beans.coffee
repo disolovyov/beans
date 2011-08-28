@@ -194,8 +194,6 @@ compile = (info, file, sourcePath, targetPath) ->
 
 # Compile all CoffeeScript sources for Node.
 buildNode = (info, watch, fn) ->
-  console.log info
-
   # Calculate path count.
   count = 0
   count++ for _ of info.paths
@@ -209,9 +207,7 @@ buildNode = (info, watch, fn) ->
           compile info, file, sourcePath, targetPath
 
         # Run the callback and watchers only after everything is compiled.
-        console.log 'compiled: ' + compiled
         if ++compiled is count
-          console.log 'running callback'
           fn?()
           if watch
             watchFiles files, (file) ->
@@ -258,10 +254,12 @@ build = (fn) ->
 clean = (target) ->
   target ?= 'all'
   return unless knownTarget 'clean', target, ['build', 'docs', 'all']
+  info = loadInfo()
+  targets = (target for target of info.paths)
   switch target
-    when 'build' then rmrf dir for dir in ['build', 'lib']
+    when 'build' then rmrf dir for dir in targets.concat('build')
     when 'docs' then rmrf 'docs'
-    when 'all' then rmrf dir for dir in ['build', 'docs', 'lib']
+    when 'all' then rmrf dir for dir in targets.concat('build', 'docs')
   return
 
 # Generate documentation files using Docco.
