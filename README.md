@@ -87,3 +87,40 @@ pair is optional. In detail:
   CoffeeScript files in source paths are going to be compiled to JavaScript and
   placed in the corresponding target paths. The folder hierarchy is kept
   intact.
+
+## Hooks
+
+When building CoffeeScript files, Beans allows to preprocess tokenize, parse,
+and compile steps of source processing. This could be used to mangle the token
+stream, AST, or resulting JavaScript source of each file, before writing to
+disk.
+
+To preprocess any step, a hook file must be created in any convenient location.
+A hook file is a Node module written in CoffeeScript or JavaScript. It should
+export a single function like this:
+
+```coffeescript
+module.exports = (filename, data) ->
+  console.log filename  # this is the currently compiled file (target)
+  data                  # this function should always return data
+```
+
+The value of `data` argument depends on the type of hook:
+
+* The **tokenize** hook receives a token stream.
+* The **parse** hook receives an AST object.
+* The **compile** hook receives a JavaScript source string.
+
+All of these values come straight from CoffeeScript's lexer, parser, and
+compiler. Consequently, their format is the same as the format expected from
+CoffeeScript's `tokens`, `nodes`, and `compile` methods.
+
+To register a hook file, a `hooks` section should be added to `package.json`.
+For example, to register `scripts/parse.coffee` and `scripts/compile.coffee`:
+
+    {
+      "hooks": {
+        "parse": "scripts/parse",
+        "compile": "scripts/compile"
+      }
+    }
