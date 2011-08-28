@@ -255,11 +255,11 @@ clean = (target) ->
   target ?= 'all'
   return unless knownTarget 'clean', target, ['build', 'docs', 'all']
   info = loadInfo()
-  targets = (target for target of info.paths)
+  paths = (pth for _, pth of info.paths)
   switch target
-    when 'build' then rmrf dir for dir in targets.concat('build')
+    when 'build' then rmrf dir for dir in paths.concat('build')
     when 'docs' then rmrf 'docs'
-    when 'all' then rmrf dir for dir in targets.concat('build', 'docs')
+    when 'all' then rmrf dir for dir in paths.concat('build', 'docs')
   return
 
 # Generate documentation files using Docco.
