@@ -52,12 +52,12 @@ loadInfo = ->
     info.hooks[hook] = require path.resolve(module) if module?
 
   # Set source and target paths.
-  info.browser.paths ?= (value for _, value of info.paths)
   overrides.paths = {src: 'lib'} unless overrides.paths?
   paths = {}
   for key, value of overrides.paths
     paths[path.resolve key] = path.resolve value
   info.paths = paths
+  info.browser.paths ?= (pth for _, pth of info.paths)
 
   # Load package.json and override existing significant values.
   package = JSON.parse(fs.readFileSync 'package.json')
