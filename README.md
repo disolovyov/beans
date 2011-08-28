@@ -56,9 +56,6 @@ to override the following build defaults:
       },
       "copyrightFrom": <current year>,
       "license": <unspecified>,
-      "hooks": {
-        "compile": null
-      },
       "paths": {
         "src": "lib"
       }
