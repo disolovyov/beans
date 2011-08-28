@@ -20,6 +20,8 @@ defaults =
   copyrightFrom: (new Date).getFullYear()
   license: ''
   hooks:
+    tokenize: null
+    parse: null
     compile: null
   paths: null
 
@@ -172,22 +174,41 @@ watchFiles = (files, fn) ->
         if curr.mtime.getTime() isnt prev.mtime.getTime()
           fn file
 
+# Try to run given code for a given event.
+# On error, format the error message as if it's related to the given file.
+tryWithFile = (file, event, fn) ->
+  try
+    fn()
+  catch err
+    err.message = "When #{event} #{file}, #{err.message}"
+    throw err
+
 # Compile one CoffeeScript file.
 # Existing event handlers are synchronously invoked in the process.
 # Each event handler is passed a subject and a context (source file).
 compile = (info, file, sourcePath, targetPath) ->
   file = fs.realpathSync file
   src = fs.readFileSync file, 'utf8'
-  try
-    src = coffee.compile src, bare: true
-  catch err
-    err.message = "In #{file}, #{err.message}"
-    throw err
+
+  # Create target file name.
   source = file.substr(sourcePath.length)
   target = targetPath + source.replace(/.coffee$/, '.js')
+
+  # Run lexer and its hook.
+  tryWithFile file, 'tokenizing', -> src = coffee.tokens src
+  src = info.hooks.tokenize(target, src) if info.hooks.tokenize?
+
+  # Run parser and its hook.
+  tryWithFile file, 'parsing', -> src = coffee.nodes src
+  src = info.hooks.parse(target, src) if info.hooks.parse?
+
+  # Run compiler and its hook.
+  tryWithFile file, 'compiling', -> src = src.compile bare: true
+  src = info.hooks.compile(target, src) if info.hooks.compile?
+
+  # Write compiled source to target file.
   makeDir path.dirname(target)
   fs.writeFileSync target, src
-  info.hooks.compile? target, src
   ts = (new Date()).toLocaleTimeString()
   source = sourcePath.substr(path.resolve('.').length + 1) + source
   console.log ts + ' - compiled ' + source
