@@ -21,8 +21,7 @@ defaults =
   license: ''
   hooks:
     compile: null
-  paths:
-    src: lib
+  paths: null
 
 # Fill in missing keys in an object with default values.
 # Works recursively with standard types.
@@ -42,10 +41,11 @@ fillDefaults = (obj, defaults) ->
 loadInfo = ->
   # Load beans.json and add unset defaults.
   try
-    info = JSON.parse(fs.readFileSync 'beans.json')
+    json = fs.readFileSync 'beans.json'
   catch e
-    info = {}
-  info = fillDefaults info, defaults
+    json = '{}'
+  overrides = JSON.parse json
+  info = fillDefaults overrides, defaults
 
   # Load hooked event handlers, if any.
   for hook, module of info.hooks
@@ -53,8 +53,9 @@ loadInfo = ->
 
   # Set source and target paths.
   info.browser.paths ?= (value for _, value of info.paths)
+  overrides.paths = {lib: 'src'} unless overrides.paths?
   paths = {}
-  for key, value of info.paths
+  for key, value of overrides.paths
     paths[path.resolve key] = path.resolve value
   info.paths = paths
 
