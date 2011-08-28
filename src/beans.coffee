@@ -53,7 +53,7 @@ loadInfo = ->
 
   # Set source and target paths.
   info.browser.paths ?= (value for _, value of info.paths)
-  overrides.paths = {lib: 'src'} unless overrides.paths?
+  overrides.paths = {src: 'lib'} unless overrides.paths?
   paths = {}
   for key, value of overrides.paths
     paths[path.resolve key] = path.resolve value
