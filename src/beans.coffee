@@ -313,7 +313,7 @@ scripts = ->
       for script in ['build', 'clean', 'docs', 'test', 'watch']
         scripts[script] = 'beans ' + script
       scripts.prepublish = 'beans build'
-      fs.writeFileSync 'package.json', JSON.stringify(package, null, 2)
+      fs.writeFileSync 'package.json', JSON.stringify(package, null, 2) + "\n"
 
 # Build everything and run tests using nodeunit.
 test = ->
