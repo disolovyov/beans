@@ -17,4 +17,8 @@ module.exports =
     defaults.c = d: 6, e: 7
     expected.c = d: 5, e: 7
     test.deepEqual beans.fillDefaults(obj, defaults), expected, 'nested'
+    obj = b: false
+    defaults = a: true, b: true
+    expected = a: true, b: false
+    test.deepEqual beans.fillDefaults(obj, defaults), expected, 'boolean'
     test.done()

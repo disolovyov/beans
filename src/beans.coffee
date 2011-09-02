@@ -30,7 +30,7 @@ defaults =
 fillDefaults = (obj, defaults) ->
   result = {}
   for key, value of defaults
-    result[key] = if obj[key]
+    result[key] = if obj[key]?
       if (typeof obj[key] is 'object') and (typeof value is 'object')
         fillDefaults obj[key], value
       else
