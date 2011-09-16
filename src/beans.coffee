@@ -198,15 +198,18 @@ compile = (info, file, sourcePath, targetPath) ->
 
   # Run lexer and its hook.
   tryWithFile file, 'tokenizing', -> src = coffee.tokens src
-  src = info.hookFns.tokenize(target, src) if info.hookFns.tokenize?
+  hookResult = info.hookFns.tokenize? target, src
+  src = hookResult if hookResult?
 
   # Run parser and its hook.
   tryWithFile file, 'parsing', -> src = coffee.nodes src
-  src = info.hookFns.parse(target, src) if info.hookFns.parse?
+  hookResult = info.hookFns.parse? target, src
+  src = hookResult if hookResult?
 
   # Run compiler and its hook.
   tryWithFile file, 'compiling', -> src = src.compile bare: true
-  src = info.hookFns.compile(target, src) if info.hookFns.compile?
+  hookResult = info.hookFns.compile? target, src
+  src = hookResult if hookResult?
 
   # Write compiled source to target file.
   makeDir path.dirname(target)
