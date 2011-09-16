@@ -50,8 +50,10 @@ loadInfo = ->
   info = fillDefaults overrides, defaults
 
   # Load hooked event handlers, if any.
-  for hook, module of info.hooks
-    info.hooks[hook] = require path.resolve(module) if module?
+  info.hookFns = {}
+  for hook, module of info.hooks when module?
+    info.hooks[hook] = file = path.resolve module
+    info.hookFns[hook] = require file
 
   # Set source and target paths.
   overrides.paths = {src: 'lib'} unless overrides.paths?
@@ -196,15 +198,15 @@ compile = (info, file, sourcePath, targetPath) ->
 
   # Run lexer and its hook.
   tryWithFile file, 'tokenizing', -> src = coffee.tokens src
-  src = info.hooks.tokenize(target, src) if info.hooks.tokenize?
+  src = info.hookFns.tokenize(target, src) if info.hookFns.tokenize?
 
   # Run parser and its hook.
   tryWithFile file, 'parsing', -> src = coffee.nodes src
-  src = info.hooks.parse(target, src) if info.hooks.parse?
+  src = info.hookFns.parse(target, src) if info.hookFns.parse?
 
   # Run compiler and its hook.
   tryWithFile file, 'compiling', -> src = src.compile bare: true
-  src = info.hooks.compile(target, src) if info.hooks.compile?
+  src = info.hookFns.compile(target, src) if info.hookFns.compile?
 
   # Write compiled source to target file.
   makeDir path.dirname(target)
@@ -289,6 +291,8 @@ clean = (target) ->
 docs = ->
   info = loadInfo()
   paths = (path.join(pth, '**/*.coffee') for pth of info.paths)
+  paths.push pth + '.{coffee,js}' for _, pth of info.hooks when pth
+  console.log paths
   withFiles "{#{paths.join()}}", (files) ->
     tryExec('docco', '"' + files.join('" "') + '"')
 
