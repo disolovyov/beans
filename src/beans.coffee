@@ -355,6 +355,7 @@ commands =
 run = ->
   args = process.argv.slice(2)
   if args.length == 0
+    version()
     help()
   else if commands[args[0]]?
     commands[args[0]][0](args.slice(1)...)
