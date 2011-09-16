@@ -102,7 +102,7 @@ export a single function like this:
 ```coffeescript
 module.exports = (filename, data) ->
   console.log filename  # this is the currently compiled file (target)
-  data                  # this function should always return data
+  data                  # return modified data
 ```
 
 The value of `data` argument depends on the type of hook:
@@ -114,6 +114,9 @@ The value of `data` argument depends on the type of hook:
 All of these values come straight from CoffeeScript's lexer, parser, and
 compiler. Consequently, their format is the same as the format expected from
 CoffeeScript's `tokens`, `nodes`, and `compile` methods.
+
+A hook can either return modified `data`, or nothing. In the latter case, the
+compiler proceeds with the original value of `data`.
 
 To register a hook file, a `hooks` section should be added to `package.json`.
 For example, to register `scripts/parse.coffee` and `scripts/compile.coffee`:
