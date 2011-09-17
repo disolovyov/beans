@@ -295,7 +295,6 @@ docs = ->
   info = loadInfo()
   paths = (path.join(pth, '**/*.coffee') for pth of info.paths)
   paths.push pth + '.{coffee,js}' for _, pth of info.hooks when pth
-  console.log paths
   withFiles "{#{paths.join()}}", (files) ->
     tryExec('docco', '"' + files.join('" "') + '"')
 
