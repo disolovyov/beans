@@ -26,6 +26,7 @@ defaults =
     compile: null
     write: null
     end: null
+    bundle: null
   paths: null
 
 # Fill in missing keys in an object with default values.
@@ -270,6 +271,9 @@ bundle = (info) ->
       fs.writeFileSync fname + '.min.js', info.headerComment + uglify(src)
       try fs.unlinkSync 'build/edge'
       fs.symlinkSync dir + '/', 'build/edge'
+
+      # Run the bundle hook.
+      info.hookFns.bundle?()
 
 # Compile all CoffeeScript sources for the browser.
 buildBrowser = (info, watch) ->

@@ -121,10 +121,11 @@ expected from CoffeeScript's `tokens`, `nodes`, and `compile` methods.
 A hook can either return modified `data`, or nothing. In the latter case, the
 compiler proceeds with the original value of `data`.
 
-There also exist two hooks that export a function without arguments:
+There also exist three hooks that export a function without arguments:
 
 * The **begin** hook that runs before the build starts.
 * The **end** hook that runs after the build ends.
+* The **bundle** hook that runs after the browser bundle is created.
 
 To register a hook file, a `hooks` section should be added to `package.json`.
 For example, to register `scripts/parse.coffee` and `scripts/compile.coffee`:
