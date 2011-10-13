@@ -109,14 +109,22 @@ The value of `data` argument depends on the type of hook:
 
 * The **tokenize** hook receives a token stream.
 * The **parse** hook receives an AST object.
-* The **compile** hook receives a JavaScript source string.
+* The **compile** hook is called after compilation, but before the file has
+  been written out. It receives a JavaScript source string.
+* The **write** hook is called after the file has been written out. It receives
+  a JavaScript source string.
 
-All of these values come straight from CoffeeScript's lexer, parser, and
-compiler. Consequently, their format is the same as the format expected from
-CoffeeScript's `tokens`, `nodes`, and `compile` methods.
+The values for the first three cases come straight from CoffeeScript's lexer,
+parser, and compiler. Consequently, their format is the same as the format
+expected from CoffeeScript's `tokens`, `nodes`, and `compile` methods.
 
 A hook can either return modified `data`, or nothing. In the latter case, the
 compiler proceeds with the original value of `data`.
+
+There also exist two hooks that export a function without arguments:
+
+* The **begin** hook that runs before the build starts.
+* The **end** hook that runs after the build ends.
 
 To register a hook file, a `hooks` section should be added to `package.json`.
 For example, to register `scripts/parse.coffee` and `scripts/compile.coffee`:

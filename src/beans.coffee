@@ -20,9 +20,12 @@ defaults =
   copyrightFrom: (new Date).getFullYear()
   license: ''
   hooks:
+    begin: null
     tokenize: null
     parse: null
     compile: null
+    write: null
+    end: null
   paths: null
 
 # Fill in missing keys in an object with default values.
@@ -211,9 +214,11 @@ compile = (info, file, sourcePath, targetPath) ->
   hookResult = info.hookFns.compile? target, src
   src = hookResult if hookResult?
 
-  # Write compiled source to target file.
+  # Write compiled source to target file and run a hook.
   makeDir path.dirname(target)
   fs.writeFileSync target, src
+  info.hookFns.write? target, src
+
   ts = (new Date()).toLocaleTimeString()
   source = sourcePath.substr(path.resolve('.').length + 1) + source
   console.log ts + ' - compiled ' + source
@@ -223,6 +228,9 @@ buildNode = (info, watch, fn) ->
   # Calculate path count.
   count = 0
   count++ for _ of info.paths
+
+  # Run a hook before the build process starts.
+  info.hookFns.begin?()
 
   # Iterate through, while counting compiled paths.
   compiled = 0
@@ -240,8 +248,9 @@ buildNode = (info, watch, fn) ->
             catch err
               console.log err.stack
 
-        # Run the callback only after everything is compiled.
+        # Run the end hook and callback only after everything is compiled.
         if ++compiled is count
+          info.hookFns.end?()
           fn?()
 
 # Use Stitch to create a browser bundle.
