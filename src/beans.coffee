@@ -1,193 +1,13 @@
 coffee   = require 'coffee-script'
 fs       = require 'fs'
 glob     = require 'glob'
+h        = require './helpers'
+loadinfo = require './loadinfo'
 nodeunit = require 'nodeunit'
 path     = require 'path'
 readline = require 'readline'
-rimraf   = require 'rimraf'
 stitch   = require 'stitch'
 uglify   = require 'uglify-js'
-which    = require 'which'
-{exec}   = require 'child_process'
-
-# Defaults for package information.
-defaults =
-  browser:
-    enabled: true
-    paths: null
-    prefix: ''
-    rootModule: null
-  copyrightFrom: (new Date).getFullYear()
-  license: ''
-  hooks:
-    begin: null
-    tokenize: null
-    parse: null
-    compile: null
-    write: null
-    end: null
-    bundle: null
-  paths:
-    src: 'lib'
-
-# Fill in missing keys in an object with default values.
-# Works recursively with standard types.
-fillDefaults = (obj, defaults) ->
-  result = {}
-  for key, value of defaults
-    result[key] = if obj[key]?
-      if (typeof obj[key] is 'object') and (typeof value is 'object')
-        fillDefaults obj[key], value
-      else
-        obj[key]
-    else
-      value
-  result
-
-# Load package information from multiple sources.
-loadInfo = ->
-  # Load beans.json and add unset defaults.
-  try
-    json = fs.readFileSync 'beans.json'
-  catch e
-    json = '{}'
-  overrides = JSON.parse json
-  info = fillDefaults overrides, defaults
-
-  # Load hooked event handlers, if any.
-  info.hookFns = {}
-  for hook, module of info.hooks when module?
-    info.hooks[hook] = file = path.resolve module
-    info.hookFns[hook] = require file
-
-  # Set source and target paths.
-  paths = {}
-  for key, value of info.paths
-    paths[path.resolve key] = path.resolve value
-  info.paths = paths
-  info.browser.paths ?= (pth for _, pth of info.paths)
-
-  # Load package.json and override existing significant values.
-  package = JSON.parse(fs.readFileSync 'package.json')
-  for key in ['author', 'name', 'description', 'version']
-    unless package[key]?
-      throw new Error "Section \"#{key}\" required in package.json."
-    info[key] = package[key]
-  info.browser.rootModule ?= info.name
-  info.browser.name = info.browser.prefix + info.name
-
-  # Copyright year message.
-  currentYear = (new Date).getFullYear()
-  if currentYear > info.copyrightFrom
-    copyright = info.copyrightFrom + '-' + currentYear
-  else
-    copyright = currentYear
-
-  # License message.
-  if info.license != ''
-    license = "Released under the #{info.license}"
-  else
-    license = 'Contact author for licensing information'
-
-  # Source header comment for browser bundles.
-  info.headerComment = """
-  /**
-   * #{info.browser.name} #{info.version} (browser bundle)
-   * #{info.description}
-   *
-   * Copyright (c) #{copyright} #{info.author}
-   * #{license}
-   */
-
-  """
-
-  # Source header and footer for browser bundles.
-  info.header = "this['#{info.name}'] = (function(){"
-  info.footer = """
-  var module = this.require('#{info.browser.rootModule}');
-  module.version = '#{info.version}';
-  return module; }).call({});
-  """
-  info
-
-# Run the specified function if a given executable is installed,
-# or print a notice.
-ifInstalled = (executable, fn) ->
-  which executable, (err) ->
-    return fn() unless err
-    console.log "This task needs \"#{executable}\" to be installed and in PATH."
-
-# Try to execute a shell command or fail with an error.
-tryExec = (executable, args, fn) ->
-  ifInstalled executable, ->
-    proc = exec executable + ' ' + args, (err) ->
-      throw err if err
-      fn?()
-    proc.stdout.on 'data', (data) ->
-      process.stdout.write data.toString()
-
-# Try to remove a directory and its contents or fails with an error.
-rmrf = (path, fn) ->
-  rimraf path, (err) ->
-    throw err if err
-    fn?()
-
-# Safely make a directory with default permissions.
-# If its parents in path are missing, they are constructed as well.
-makeDir = (dir) ->
-  missing = []
-  dir = path.resolve dir
-  until path.existsSync dir
-    missing.unshift dir
-    dir = path.dirname dir
-  for dir in missing
-    fs.mkdirSync dir, 0755
-
-# Find files based on a global pattern.
-# Call the provided function with the result, if any files are found.
-withFiles = (pattern, fn) ->
-  files = glob.globSync pattern
-  if files.length > 0
-    fn files
-
-# Ask user a question an run a callback when answered.
-# The *answers* argument is an array of accepted answers.
-ask = (question, answers, fn) ->
-  {stdin, stdout} = process
-  stdout.write question + ' (' + answers.join('/') + ') '
-  stdin.resume()
-  stdin.on 'data', (answer) ->
-    answer = answer.toString().trim()
-    if answers.indexOf(answer) != -1
-      stdin.pause()
-      fn answer
-    else
-      stdout.write 'Please answer with one of: (' + answers.join('/') + ') '
-
-# Check command argument.
-knownTarget = (command, target, targets) ->
-  if targets.indexOf(target) == -1
-    console.log "Unknown #{command} target \"#{target}\"."
-    console.log "Try one of: #{targets.join ', '}."
-    return false
-  true
-
-# Watch a list of files and run a callback when it's modified.
-watchFiles = (files, fn) ->
-  for file in files
-    do (file) ->
-      fs.watchFile file, {persistent: true, interval: 500}, (curr, prev) ->
-        if curr.mtime.getTime() isnt prev.mtime.getTime()
-          fn file
-
-# Try to run given code for a given event.
-# On error, format the error message as if it's related to the given file.
-tryWithFile = (file, event, fn) ->
-  try
-    fn()
-  catch err
-    err.message = "When #{event} #{file}, #{err.message}"
-    throw err
 
 # Compile one CoffeeScript file.
 # Existing event handlers are synchronously invoked in the process.
@@ -201,22 +21,22 @@ compile = (info, file, sourcePath, targetPath) ->
   target = targetPath + source.replace(/.coffee$/, '.js')
 
   # Run lexer and its hook.
-  tryWithFile file, 'tokenizing', -> src = coffee.tokens src
+  h.tryWithFile file, 'tokenizing', -> src = coffee.tokens src
   hookResult = info.hookFns.tokenize? target, src
   src = hookResult if hookResult?
 
   # Run parser and its hook.
-  tryWithFile file, 'parsing', -> src = coffee.nodes src
+  h.tryWithFile file, 'parsing', -> src = coffee.nodes src
   hookResult = info.hookFns.parse? target, src
   src = hookResult if hookResult?
 
   # Run compiler and its hook.
-  tryWithFile file, 'compiling', -> src = src.compile bare: true
+  h.tryWithFile file, 'compiling', -> src = src.compile bare: true
   hookResult = info.hookFns.compile? target, src
   src = hookResult if hookResult?
 
   # Write compiled source to target file and run a hook.
-  makeDir path.dirname(target)
+  h.makeDir path.dirname(target)
   fs.writeFileSync target, src
   info.hookFns.write? target, src
 
@@ -237,13 +57,13 @@ buildNode = (info, watch, fn) ->
   compiled = 0
   for sourcePath, targetPath of info.paths
     do (sourcePath, targetPath) ->
-      withFiles path.join(sourcePath, '**/*.coffee'), (files) ->
+      h.withFiles path.join(sourcePath, '**/*.coffee'), (files) ->
         for file in files
           compile info, file, sourcePath, targetPath
 
         # Set a watcher for the current path.
         if watch
-          watchFiles files, (file) ->
+          h.watchFiles files, (file) ->
             try
               compile info, file, sourcePath, targetPath
             catch err
@@ -262,8 +82,8 @@ bundle = (info) ->
       paths: paths
     .compile (err, src) ->
       throw err if err
-      makeDir 'build'
-      makeDir 'build/' + info.version
+      h.makeDir 'build'
+      h.makeDir 'build/' + info.version
       dir = fs.realpathSync 'build/' + info.version
       fname = dir + '/' + info.browser.name
       src = info.header + src + info.footer
@@ -280,12 +100,12 @@ buildBrowser = (info, watch) ->
   bundle info
   if watch
     paths = (path.join(pth, '**/*.{coffee,js}') for pth in info.browser.paths)
-    watchFiles glob.globSync("{#{paths.join()}}"), ->
+    h.watchFiles glob.globSync("{#{paths.join()}}"), ->
       bundle info
 
 # Compile CoffeeScript source for Node and browsers.
 build = (fn) ->
-  info = loadInfo()
+  info = loadinfo()
   buildNode info, false, ->
     buildBrowser info if info.browser.enabled
     fn?()
@@ -294,22 +114,22 @@ build = (fn) ->
 # or just tidy things up.
 clean = (target) ->
   target ?= 'all'
-  return unless knownTarget 'clean', target, ['build', 'docs', 'all']
-  info = loadInfo()
+  return unless h.knownTarget 'clean', target, ['build', 'docs', 'all']
+  info = loadinfo()
   paths = (pth for _, pth of info.paths)
   switch target
-    when 'build' then rmrf dir for dir in paths.concat('build')
-    when 'docs' then rmrf 'docs'
-    when 'all' then rmrf dir for dir in paths.concat('build', 'docs')
+    when 'build' then h.rmrf dir for dir in paths.concat('build')
+    when 'docs' then h.rmrf 'docs'
+    when 'all' then h.rmrf dir for dir in paths.concat('build', 'docs')
   return
 
 # Generate documentation files using Docco.
 docs = ->
-  info = loadInfo()
+  info = loadinfo()
   paths = (path.join(pth, '**/*.coffee') for pth of info.paths)
   paths.push pth + '.{coffee,js}' for _, pth of info.hooks when pth
-  withFiles "{#{paths.join()}}", (files) ->
-    tryExec('docco', '"' + files.join('" "') + '"')
+  h.withFiles "{#{paths.join()}}", (files) ->
+    h.tryExec('docco', '"' + files.join('" "') + '"')
 
 # Display command help.
 help = ->
@@ -319,11 +139,11 @@ help = ->
 # Build everything and run `npm publish`.
 publish = ->
   build ->
-    tryExec 'npm', 'publish'
+    h.tryExec 'npm', 'publish'
 
 # Register beans in package.json scripts.
 scripts = ->
-  ask 'This will modify package.json. Proceed?', ['y', 'n'], (answer) ->
+  h.ask 'This will modify package.json. Proceed?', ['y', 'n'], (answer) ->
     if answer == 'y'
       package = JSON.parse(fs.readFileSync 'package.json')
       deps = package.devDependencies ||= {}
@@ -337,7 +157,7 @@ scripts = ->
 # Build everything and run tests using nodeunit.
 test = ->
   build ->
-    withFiles 'test/**/*.test.coffee', (files) ->
+    h.withFiles 'test/**/*.test.coffee', (files) ->
       nodeunit.reporters.default.run files
 
 # Get version information.
@@ -350,7 +170,7 @@ version = ->
 
 # Build everything once, then watch for changes.
 watch = ->
-  info = loadInfo()
+  info = loadinfo()
   buildNode info, true, ->
     buildBrowser info, true if info.browser.enabled
 

@@ -1,5 +1,5 @@
 # Load Beans in a sandbox to access private functions.
-beans = require('nodeunit').utils.sandbox 'lib/beans.js',
+beans = require('nodeunit').utils.sandbox 'lib/loadinfo.js',
   __dirname: __dirname
   module: module
   require: require
