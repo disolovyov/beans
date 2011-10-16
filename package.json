@@ -15,6 +15,7 @@
   "dependencies": {
     "glob": "~2.0.7",
     "nodeunit": "~0.5.3",
+    "request": "~2.1.1",
     "rimraf": "~1.0.4",
     "stitch": "~0.3.2",
     "uglify-js": "~1.0.6",

@@ -41,6 +41,31 @@ exports.makeDir = (dir) ->
   for dir in missing
     fs.mkdirSync dir, 0755
 
+# Concatenates one or more strings to target file.
+exports.cat = (target, strings...) ->
+  fd = fs.openSync target, 'w'
+  for s in strings
+    fs.writeSync fd, s, null
+    fs.writeSync fd, "\n", null if s.substr(-1) isnt "\n"
+  fs.closeSync fd
+
+# Fetches the contents of local or remote paths.
+expots.fetch = (fn, paths...) ->
+  contents = []
+  current = 0
+  total = paths.length
+  step = ->
+    fn contents if ++current is total
+  for path, i in paths
+    if /^[a-z]+:\/\//.test path
+      request path, (err, response, body) ->
+        throw err if err
+        contents[i] = body
+        step()
+    else
+      fs.readFileSync path, 'utf8'
+      step()
+
 # Find files based on a global pattern.
 # Call the provided function with the result, if any files are found.
 exports.withFiles = (pattern, fn) ->
