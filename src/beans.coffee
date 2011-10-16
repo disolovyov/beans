@@ -136,6 +136,18 @@ help = ->
   for name, command of commands
     console.log "beans #{name}\t#{command[1]}"
 
+# Fetch local and remote includes.
+include = ->
+  info = loadinfo()
+  for target, sources of info.browser.include
+    fn = (contents) ->
+      target = path.resolve target
+      h.makeDir path.dirname(target)
+      h.cat target, contents
+    sources = [sources] unless Array.isArray sources
+    h.fetch fn, sources
+  return
+
 # Build everything and run `npm publish`.
 publish = ->
   build ->
@@ -149,7 +161,7 @@ scripts = ->
       deps = package.devDependencies ||= {}
       deps.beans ||= '~' + ver
       scripts = package.scripts ||= {}
-      for script in ['build', 'clean', 'docs', 'test', 'watch']
+      for script in ['build', 'clean', 'docs', 'include', 'test', 'watch']
         scripts[script] = 'beans ' + script
       scripts.prepublish = 'beans build'
       fs.writeFileSync 'package.json', JSON.stringify(package, null, 2) + "\n"
@@ -180,6 +192,7 @@ commands =
   clean:   [ clean   , 'Remove generated directories and tidy things up.' ]
   docs:    [ docs    , 'Generate documentation files using Docco.' ]
   help:    [ help    , 'Display help (this text).' ]
+  include: [ include , 'Fetch local and remote includes.' ]
   publish: [ publish , 'Build everything and run npm publish.' ]
   scripts: [ scripts , 'Register beans in package.json scripts.' ]
   test:    [ test    , 'Build everything and run tests using nodeunit.' ]

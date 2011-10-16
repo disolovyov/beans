@@ -5,6 +5,7 @@ path = require 'path'
 defaults =
   browser:
     enabled: true
+    include: undefined
     paths: null
     prefix: ''
     rootModule: null
