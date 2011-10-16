@@ -18,8 +18,7 @@ defaults =
     write: null
     end: null
     bundle: null
-  paths:
-    src: 'lib'
+  paths: null
 
 # Fill in missing keys in an object with default values.
 # Works recursively with standard types.
@@ -52,8 +51,9 @@ module.exports = ->
     info.hookFns[hook] = require file
 
   # Set source and target paths.
+  overrides.paths = {src: 'lib'} unless overrides.paths?
   paths = {}
-  for key, value of info.paths
+  for key, value of overrides.paths
     paths[path.resolve key] = path.resolve value
   info.paths = paths
   info.browser.paths ?= (pth for _, pth of info.paths)
