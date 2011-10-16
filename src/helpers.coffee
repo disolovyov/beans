@@ -1,9 +1,10 @@
-fs     = require 'fs'
-glob   = require 'glob'
-path   = require 'path'
-rimraf = require 'rimraf'
-which  = require 'which'
-{exec} = require 'child_process'
+fs      = require 'fs'
+glob    = require 'glob'
+path    = require 'path'
+request = require 'request'
+rimraf  = require 'rimraf'
+which   = require 'which'
+{exec}  = require 'child_process'
 
 # Prepare export object.
 module.exports = exports = {}
@@ -42,7 +43,7 @@ exports.makeDir = (dir) ->
     fs.mkdirSync dir, 0755
 
 # Concatenates one or more strings to target file.
-exports.cat = (target, strings...) ->
+exports.cat = (target, strings) ->
   fd = fs.openSync target, 'w'
   for s in strings
     fs.writeSync fd, s, null
@@ -50,21 +51,23 @@ exports.cat = (target, strings...) ->
   fs.closeSync fd
 
 # Fetches the contents of local or remote paths.
-expots.fetch = (fn, paths...) ->
+exports.fetch = (fn, paths) ->
   contents = []
   current = 0
   total = paths.length
   step = ->
     fn contents if ++current is total
   for path, i in paths
-    if /^[a-z]+:\/\//.test path
-      request path, (err, response, body) ->
-        throw err if err
-        contents[i] = body
+    do (path, i) ->
+      if /^[a-z]+:\/\//.test path
+        console.log "fetch: #{path}"
+        request path, (err, response, body) ->
+          throw err if err
+          contents[i] = body
+          step()
+      else
+        contents[i] = fs.readFileSync path, 'utf8'
         step()
-    else
-      fs.readFileSync path, 'utf8'
-      step()
 
 # Find files based on a global pattern.
 # Call the provided function with the result, if any files are found.
