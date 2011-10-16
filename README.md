@@ -136,3 +136,24 @@ For example, to register `scripts/parse.coffee` and `scripts/compile.coffee`:
         "compile": "scripts/compile"
       }
     }
+
+## Included Files
+
+Beans can fetch files from local and remote sources, glue them together and
+write to disk. The target files can be built on demand by issuing the
+`beans include` command.
+
+To register an included file, an `include` section should be added to
+`package.json`. This section contains an object, where keys are target files
+and values are local and/or remote source files. For example, to glue together
+jQuery, jQuery UI, and one more local library in one file:
+
+    {
+      "include": {
+        "public/js/jquery.js": [
+          "https://example.com/path/to/jquery.min.js",
+          "https://example.com/path/to/jquery-ui.min.js",
+          "support/path/to/additional-library.min.js"
+        ]
+      }
+    }
