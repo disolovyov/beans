@@ -87,13 +87,15 @@ bundle = (info) ->
       dir = fs.realpathSync 'build/' + info.version
       fname = dir + '/' + info.browser.name
       src = info.header + src + info.footer
-      fs.writeFileSync fname + '.js', info.headerComment + src
+      cleanFilename = fname + '.js'
+      cleanSource = info.headerComment + src
+      fs.writeFileSync cleanFilename, cleanSource
       fs.writeFileSync fname + '.min.js', info.headerComment + uglify(src)
       try fs.unlinkSync 'build/edge'
       fs.symlinkSync dir + '/', 'build/edge'
 
       # Run the bundle hook.
-      info.hookFns.bundle? fname + '.js'
+      info.hookFns.bundle? cleanFilename, cleanSource
 
 # Compile all CoffeeScript sources for the browser.
 buildBrowser = (info, watch) ->
