@@ -93,7 +93,7 @@ bundle = (info) ->
       fs.symlinkSync dir + '/', 'build/edge'
 
       # Run the bundle hook.
-      info.hookFns.bundle?()
+      info.hookFns.bundle? fname + '.js'
 
 # Compile all CoffeeScript sources for the browser.
 buildBrowser = (info, watch) ->
