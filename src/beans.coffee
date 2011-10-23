@@ -142,12 +142,13 @@ help = ->
 include = ->
   info = loadinfo()
   for target, sources of info.browser.include
-    fn = (contents) ->
-      target = path.resolve target
-      h.makeDir path.dirname(target)
-      h.cat target, contents
-    sources = [sources] unless Array.isArray sources
-    h.fetch fn, sources
+    do (target, sources) ->
+      fn = (contents) ->
+        target = path.resolve target
+        h.makeDir path.dirname(target)
+        h.cat target, contents
+      sources = [sources] unless Array.isArray sources
+      h.fetch fn, sources
   return
 
 # Build everything and run `npm publish`.
