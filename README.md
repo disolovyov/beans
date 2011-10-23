@@ -145,8 +145,9 @@ write to disk. The target files can be built on demand by issuing the
 
 To register an included file, a `browser.include` section should be added to
 `package.json`. This section contains an object, where keys are target files
-and values are local and/or remote source files. For example, to glue together
-jQuery, jQuery UI, and one more local library in one file:
+and values are local and/or remote source files. Local paths can be glob
+patterns. For example, to glue together jQuery, jQuery UI, and one more local
+library in one file:
 
     {
       "browser": {

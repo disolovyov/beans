@@ -57,17 +57,22 @@ exports.fetch = (fn, paths) ->
   total = paths.length
   step = ->
     fn contents if ++current is total
-  for path, i in paths
-    do (path, i) ->
+  for path in paths
+    do (path) ->
       if /^[a-z]+:\/\//.test path
         console.log "fetch: #{path}"
         request path, (err, response, body) ->
           throw err if err
-          contents[i] = body
+          contents.push body
           step()
       else
-        contents[i] = fs.readFileSync path, 'utf8'
-        step()
+        files = glob.globSync path
+        if files.length
+          total += files.length - 1
+          for file in files
+            console.log "copy: #{file}"
+            contents.push fs.readFileSync file, 'utf8'
+            step()
 
 # Find files based on a global pattern.
 # Call the provided function with the result, if any files are found.
