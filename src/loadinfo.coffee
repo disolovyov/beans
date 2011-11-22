@@ -36,7 +36,7 @@ fillDefaults = (obj, defaults) ->
   result
 
 # Load package information from multiple sources.
-module.exports = ->
+loadInfo = ->
   # Load beans.json and add unset defaults.
   try
     json = fs.readFileSync 'beans.json'
@@ -100,4 +100,10 @@ module.exports = ->
   module.version = '#{info.version}';
   return module; }).call({});
   """
+  info
+
+# Return loaded or memoized package information.
+info = null
+module.exports = ->
+  info = loadInfo() unless info?
   info
