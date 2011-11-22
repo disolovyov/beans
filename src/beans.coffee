@@ -136,7 +136,7 @@ docs = ->
 # Display command help.
 help = ->
   for name, command of commands
-    console.log "beans #{name}\t#{command[1]}"
+    console.log "beans #{name}\t#{command.info}"
 
 # Fetch local and remote includes.
 include = ->
@@ -189,19 +189,6 @@ watch = ->
   buildNode info, true, ->
     buildBrowser info, true if info.browser.enabled
 
-# Supported commands list.
-commands =
-  build:   [ build   , 'Compile CoffeScript source for enabled targets.' ]
-  clean:   [ clean   , 'Remove generated directories and tidy things up.' ]
-  docs:    [ docs    , 'Generate documentation files using Docco.' ]
-  help:    [ help    , 'Display help (this text).' ]
-  include: [ include , 'Fetch local and remote includes.' ]
-  publish: [ publish , 'Build everything and run npm publish.' ]
-  scripts: [ scripts , 'Register beans in package.json scripts.' ]
-  test:    [ test    , 'Build everything and run tests using nodeunit.' ]
-  version: [ version , 'Display current Beans version.' ]
-  watch:   [ watch   , 'Build everything once, then watch for changes.' ]
-
 # Run the console command.
 run = ->
   args = process.argv.slice(2)
@@ -209,11 +196,36 @@ run = ->
     version()
     help()
   else if commands[args[0]]?
-    commands[args[0]][0](args.slice(1)...)
+    commands[args[0]](args.slice(1)...)
   else
     console.log "Don't know how to \"#{args[0]}\"."
 
-# Exports commands for in-Node use and command entry point.
+# Add command description.
+build.info   = 'Compile CoffeScript source for enabled targets.'
+clean.info   = 'Remove generated directories and tidy things up.'
+docs.info    = 'Generate documentation files using Docco.'
+help.info    = 'Display help (this text).'
+include.info = 'Fetch local and remote includes.'
+publish.info = 'Build everything and run npm publish.'
+scripts.info = 'Register beans in package.json scripts.'
+test.info    = 'Build everything and run tests using nodeunit.'
+version.info = 'Display current Beans version.'
+watch.info   = 'Build everything once, then watch for changes.'
+
+# Supported commands list.
+commands =
+  build: build
+  clean: clean
+  docs: docs
+  help: help
+  include: include
+  publish: publish
+  scripts: scripts
+  test: test
+  version: version
+  watch: watch
+
+# Export commands and other API stuff for in-Node use.
 module.exports =
   commands: commands
   run: run
