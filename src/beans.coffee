@@ -75,7 +75,7 @@ buildNode = (info, watch, fn) ->
           fn?()
 
 # Use Stitch to create a browser bundle.
-bundle = (info) ->
+bundle = (info, fn) ->
   paths = (fs.realpathSync path for path in info.browser.paths)
   stitch
     .createPackage
@@ -89,17 +89,19 @@ bundle = (info) ->
       src = info.header + src + info.footer
       cleanFilename = fname + '.js'
       cleanSource = info.headerComment + src
+      uglySource = info.headerComment + uglify(src)
       fs.writeFileSync cleanFilename, cleanSource
-      fs.writeFileSync fname + '.min.js', info.headerComment + uglify(src)
+      fs.writeFileSync fname + '.min.js', uglySource
       try fs.unlinkSync 'build/edge'
       fs.symlinkSync dir + '/', 'build/edge'
 
       # Run the bundle hook.
       info.hookFns.bundle? cleanFilename, cleanSource
+      fn? clean: cleanSource, ugly: uglySource
 
 # Compile all CoffeeScript sources for the browser.
-buildBrowser = (info, watch) ->
-  bundle info
+buildBrowser = (info, watch, fn) ->
+  bundle info, fn
   if watch
     paths = (path.join(pth, '**/*.{coffee,js}') for pth in info.browser.paths)
     h.watchFiles glob.globSync("{#{paths.join()}}"), ->
@@ -109,8 +111,11 @@ buildBrowser = (info, watch) ->
 build = (fn) ->
   info = loadinfo()
   buildNode info, false, ->
-    buildBrowser info if info.browser.enabled
-    fn?()
+    if info.browser.enabled
+      buildBrowser info, false, (source) ->
+        fn? source
+    else
+      fn?()
 
 # Remove generated directories to allow for a clean build
 # or just tidy things up.
@@ -200,6 +205,52 @@ run = ->
   else
     console.log "Don't know how to \"#{args[0]}\"."
 
+# Route middleware to serve user source.
+userSource = (options) ->
+  # General rebuild mechanism.
+  rebuild = (fn) ->
+    build (source) ->
+      fn if options?.minified then source.ugly else source.clean
+
+  # Source fetching is different based on the refresh option.
+  getSource = if options?.refresh
+    (fn) ->
+      rebuild (source) ->
+        fn source
+  else
+    fixedSource = ''
+    rebuild (source) ->
+      fixedSource = source
+    (fn) ->
+      fn fixedSource
+
+  # The actual custom middleware function.
+  (req, res) ->
+    getSource (source) ->
+      res.send source
+
+# Route middleware to serve include source.
+includeSource = (options) ->
+  info = loadinfo()
+  include() if options?.refresh
+  (req, res) ->
+    includes = []
+    for includedFile of info.browser.include
+      includes.push fs.readFileSync(includedFile, 'utf8')
+    res.send includes.join('\n')
+
+# Route middleware to serve everything.
+middleware = (options) ->
+  userMiddleware = userSource options
+  includeMiddleware = includeSource options
+  (req, res, next) ->
+    includeMiddleware req, res, next
+    userMiddleware req, res, next
+
+# Attach user and include middleware to main one for the API.
+middleware.user = userSource
+middleware.include = includeSource
+
 # Add command description.
 build.info   = 'Compile CoffeScript source for enabled targets.'
 clean.info   = 'Remove generated directories and tidy things up.'
@@ -228,5 +279,6 @@ commands =
 # Export commands and other API stuff for in-Node use.
 module.exports =
   commands: commands
+  middleware: middleware
   run: run
   version: ver
