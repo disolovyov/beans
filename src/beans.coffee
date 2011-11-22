@@ -205,6 +205,16 @@ run = ->
   else
     console.log "Don't know how to \"#{args[0]}\"."
 
+# Make custom sender to stream.
+makeSender = (end) ->
+  end = true unless end?
+  if end
+    (res, s) ->
+      res.writeHead 200, 'Content-Type': 'text/javascript'
+      res.end s
+  else
+    (res, s) -> res.write s
+
 # Route middleware to serve user source.
 userSource = (options) ->
   # General rebuild mechanism.
@@ -225,24 +235,29 @@ userSource = (options) ->
       fn fixedSource
 
   # The actual custom middleware function.
+  send = makeSender options?.end
   (req, res) ->
     getSource (source) ->
-      res.send source
+      send res, source
 
 # Route middleware to serve include source.
 includeSource = (options) ->
   info = loadinfo()
+  send = makeSender options?.end
   include() if options?.refresh
   (req, res) ->
     includes = []
     for includedFile of info.browser.include
       includes.push fs.readFileSync(includedFile, 'utf8')
-    res.send includes.join('\n')
+    send res, includes.join('\n')
 
 # Route middleware to serve everything.
 middleware = (options) ->
-  userMiddleware = userSource options
+  end = options?.end
+  options.end = false
   includeMiddleware = includeSource options
+  options.end = end
+  userMiddleware = userSource options
   (req, res, next) ->
     includeMiddleware req, res, next
     userMiddleware req, res, next
