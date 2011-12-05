@@ -170,8 +170,8 @@ scripts = ->
       deps.beans ||= '~' + ver
       scripts = package.scripts ||= {}
       for script in ['build', 'clean', 'docs', 'include', 'test', 'watch']
-        scripts[script] = 'beans ' + script
-      scripts.prepublish = 'beans build'
+        scripts[script] ?= 'beans ' + script
+      scripts.prepublish ?= 'beans build'
       fs.writeFileSync 'package.json', JSON.stringify(package, null, 2) + "\n"
 
 # Build everything and run tests using nodeunit.
