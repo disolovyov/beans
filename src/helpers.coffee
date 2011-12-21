@@ -3,6 +3,7 @@ glob    = require 'glob'
 path    = require 'path'
 request = require 'request'
 rimraf  = require 'rimraf'
+uglify  = require 'uglify-js'
 which   = require 'which'
 {exec}  = require 'child_process'
 
@@ -61,31 +62,36 @@ exports.fetch = (fn, paths) ->
       # Flatten the contents array
       flat = []
       for item in contents
-        if typeof item is 'object'
-          flat.push subitem for subitem in item
-        else
-          flat.push item
+        flat.push subitem for subitem in item
       # Return fetched contents.
       fn flat
 
   # Fetch everything.
   for path, index in paths
     do (path, index) ->
-      contents[index] = ''
-      if /^[a-z]+:\/\//.test path
-        console.log "fetch: #{path}"
-        request path, (err, response, body) ->
-          throw err if err
-          contents[index] = body
-          step()
-      else
-        files = glob.globSync path
-        if files.length
-          contents[index] = []
-          for file in files
-            console.log "copy: #{file}"
-            contents[index].push fs.readFileSync(file, 'utf8')
-          step()
+      if typeof path is 'object'
+        minify = path.minify
+        path = path.path
+      fetchPath path, (item) ->
+        item = (uglify subitem for subitem in item) if minify
+        contents[index] = item
+        step()
+
+# Fetches the content of one path.
+fetchPath = (path, fn) ->
+  if /^[a-z]+:\/\//.test path
+    console.log "fetch: #{path}"
+    request path, (err, _, body) ->
+      throw err if err
+      fn [body]
+  else
+    files = glob.globSync path
+    if files.length
+      contents = []
+      for file in files
+        console.log "copy: #{file}"
+        contents.push fs.readFileSync(file, 'utf8')
+      fn contents
 
 # Find files based on a global pattern.
 # Call the provided function with the result, if any files are found.
