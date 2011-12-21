@@ -46,15 +46,10 @@ compile = (info, file, sourcePath, targetPath) ->
 
 # Compile all CoffeeScript sources for Node.
 buildNode = (info, watch, fn) ->
-  # Calculate path count.
-  count = 0
-  count++ for _ of info.paths
-
   # Run a hook before the build process starts.
   info.hookFns.begin?()
 
-  # Iterate through, while counting compiled paths.
-  compiled = 0
+  # Iterate through.
   for sourcePath, targetPath of info.paths
     do (sourcePath, targetPath) ->
       h.withFiles path.join(sourcePath, '**/*.coffee'), (files) ->
@@ -69,10 +64,9 @@ buildNode = (info, watch, fn) ->
             catch err
               console.log err.stack
 
-        # Run the end hook and callback only after everything is compiled.
-        if ++compiled is count
-          info.hookFns.end?()
-          fn?()
+  # Run the end hook and callback only after everything is compiled.
+  info.hookFns.end?()
+  fn?()
 
 # Use Stitch to create a browser bundle.
 bundle = (info, fn) ->
@@ -99,7 +93,7 @@ bundle = (info, fn) ->
       info.hookFns.bundle? cleanFilename, cleanSource
       fn? clean: cleanSource, ugly: uglySource
 
-# Compile all CoffeeScript sources for the browser.
+# Compile all sources for the browser.
 buildBrowser = (info, watch, fn) ->
   bundle info, fn
   if watch
@@ -107,7 +101,7 @@ buildBrowser = (info, watch, fn) ->
     h.watchFiles glob.globSync("{#{paths.join()}}"), ->
       bundle info
 
-# Compile CoffeeScript source for Node and browsers.
+# Compile source for Node and browsers.
 build = (fn) ->
   info = loadinfo()
   buildNode info, false, ->
