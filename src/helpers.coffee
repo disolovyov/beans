@@ -51,28 +51,41 @@ exports.cat = (target, strings) ->
   fs.closeSync fd
 
 # Fetches the contents of local or remote paths.
+# Preserves order.
 exports.fetch = (fn, paths) ->
   contents = []
   current = 0
   total = paths.length
   step = ->
-    fn contents if ++current is total
-  for path in paths
-    do (path) ->
+    if ++current is total
+      # Flatten the contents array
+      flat = []
+      for item in contents
+        if typeof item is 'object'
+          flat.push subitem for subitem in item
+        else
+          flat.push item
+      # Return fetched contents.
+      fn flat
+
+  # Fetch everything.
+  for path, index in paths
+    do (path, index) ->
+      contents[index] = ''
       if /^[a-z]+:\/\//.test path
         console.log "fetch: #{path}"
         request path, (err, response, body) ->
           throw err if err
-          contents.push body
+          contents[index] = body
           step()
       else
         files = glob.globSync path
         if files.length
-          total += files.length - 1
+          contents[index] = []
           for file in files
             console.log "copy: #{file}"
-            contents.push fs.readFileSync file, 'utf8'
-            step()
+            contents[index].push fs.readFileSync(file, 'utf8')
+          step()
 
 # Find files based on a global pattern.
 # Call the provided function with the result, if any files are found.
