@@ -79,7 +79,7 @@ loadInfo = ->
   if info.license != ''
     license = "Released under the #{info.license}"
   else
-    license = 'Contact author for licensing information'
+    license = 'All rights reserved'
 
   # Source header comment for browser bundles.
   info.headerComment = """
