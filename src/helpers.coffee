@@ -138,3 +138,9 @@ exports.tryWithFile = (file, event, fn) ->
   catch err
     err.message = "When #{event} #{file}, #{err.message}"
     throw err
+
+# Log a file event to console.
+exports.fileLog = (event, file = '') ->
+  ts = (new Date()).toLocaleTimeString()
+  file = ' ' + file.substr(path.resolve('.').length + 1)
+  console.log "#{ts} - #{event}#{file}"

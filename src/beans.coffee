@@ -40,9 +40,8 @@ compile = (info, file, sourcePath, targetPath) ->
   fs.writeFileSync target, src
   info.hookFns.write? target, src
 
-  ts = (new Date()).toLocaleTimeString()
-  source = sourcePath.substr(path.resolve('.').length + 1) + source
-  console.log ts + ' - compiled ' + source
+  # Log the compilation event to console.
+  h.fileLog 'compiled', file
 
 # Compile all CoffeeScript sources for Node.
 buildNode = (info, watch, fn) ->
@@ -95,11 +94,14 @@ bundle = (info, fn) ->
 
 # Compile all sources for the browser.
 buildBrowser = (info, watch, fn) ->
-  bundle info, fn
+  bundle info, (source) ->
+    h.fileLog 'bundled'
+    fn? source
   if watch
     paths = (path.join(pth, '**/*.{coffee,js}') for pth in info.browser.paths)
-    h.watchFiles glob.globSync("{#{paths.join()}}"), ->
-      bundle info
+    h.watchFiles glob.globSync("{#{paths.join()}}"), (file) ->
+      bundle info, ->
+        h.fileLog 'rebundled', file
 
 # Compile source for Node and browsers.
 build = (fn) ->
